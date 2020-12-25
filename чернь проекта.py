@@ -106,19 +106,46 @@ class Character(pygame.sprite.Sprite):
                 if pygame.sprite.spritecollideany(self, platform_up):
                     v = pygame.sprite.spritecollideany(self, platform_up).vel
                     if (v < 0 and not pygame.sprite.spritecollideany(self, left)) \
-                        or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
+                            or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
                         self.rect = self.rect.move(v, 0)
+
+
+class Monika(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_spr)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        if timer_M % 5 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+
 
 
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('МоникаТале')
-    size = width, height = 400, 400
+    size = width, height = 400, 500
     screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
     running = True
     fps = 30
     timer = 0
+    timer_M = 0
+
     platform_down = pygame.sprite.Group()
     platform_up = pygame.sprite.Group()
     clock = pygame.time.Clock()
@@ -130,17 +157,19 @@ if __name__ == '__main__':
     left = pygame.sprite.Group()
     right = pygame.sprite.Group()
     characters = pygame.sprite.Group()
+
     ctrl = False
-    Board(100, 180, 300, 180, up)
-    Board(100, 380, 300, 380, down)
-    Board(100, 180, 100, 380, left)
-    Board(300, 180, 300, 386, right)
+    Board(100, 250, 300, 250, up)
+    Board(100, 450, 300, 450, down)
+    Board(100, 250, 100, 450, left)
+    Board(300, 250, 300, 456, right)
     move_up = False
     move_left = False
     move_right = False
-    Platform((150, 250))
-    Platform((200, 300))
+    Platform((150, 300))
+    Platform((200, 350))
     c = 0
+    monika = Monika(load_image('MONIK.png'), 5, 2, 150, 20)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -177,9 +206,11 @@ if __name__ == '__main__':
             timer = 0
         if move_up:
             timer += 0.5
+        timer_M += 1
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(30)
         pygame.display.flip()
         screen.fill((0, 0, 0))
+
     pygame.quit()
