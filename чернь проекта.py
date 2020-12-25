@@ -133,19 +133,97 @@ class Monika(pygame.sprite.Sprite):
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
 
+class Button():
+    def __init__(self, start_x, start_y, width, height, screen, text):
+        self.on = False
+        self.text = text
+        self.start_x = start_x
+        self.start_y = start_y
+        self.width = width
+        self.height = height
+        self.font = pygame.font.Font(None, 30)
+        self.screen = screen
+        string_rendered = self.font.render(text, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        intro_rect.y = self.start_y
+        intro_rect.x = self.start_x
+        self.start_y += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+        pygame.draw.rect(screen, 'white', (self.start_x - 10, self.start_y - 35, 200, 50), 3)
+
+    def on_it(self, pos):
+        x = pos[0]
+        y = pos[1]
+        if (self.start_x - 10) <= x <= (self.start_x - 10 + 200) \
+                and (self.start_y - 35) <= y <= (self.start_y + 20):
+            self.on = True
+            return self.on
+        else:
+            self.on = False
+            return self.on
+
+    def clicked(self, pos):
+        if self.on:
+            return True
+        else:
+            return False
+
+    def update(self):
+        if self.on:
+            string_rendered = self.font.render(self.text, 1, pygame.Color('green'))
+            intro_rect = string_rendered.get_rect()
+            intro_rect.y = self.start_y - 20
+            intro_rect.x = 200
+            self.screen.blit(string_rendered, intro_rect)
+            pygame.draw.rect(self.screen, 'green', (self.start_x - 10, self.start_y - 35, 200, 50), 3)
+        else:
+            string_rendered = self.font.render(self.text, 1, pygame.Color('white'))
+            intro_rect = string_rendered.get_rect()
+            intro_rect.y = self.start_y - 20
+            intro_rect.x = 200
+            self.screen.blit(string_rendered, intro_rect)
+            pygame.draw.rect(self.screen, 'white', (self.start_x - 10, self.start_y - 35, 200, 50), 3)
+
+def start_screen(fps, size):
+    fon = pygame.display.set_mode(size)
+    fon.fill((0, 0, 0))
+    start_button = Button(200, 300, 100, 50, fon, 'НАЧАТЬ')
+    #developers_button = Button(200, 375, 100, 125, fon, 'РАЗРАБОТЧИКИ')
+    exit_button = Button(200, 450, 100, 200, fon, 'ВЫХОД')
+    on_button = False
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return False
+            elif event.type == pygame.MOUSEMOTION:
+                start_button.on_it(event.pos)
+                #developers_button.on_it(event.pos)
+                exit_button.on_it(event.pos)
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if start_button.clicked(event.pos):
+                    pygame.quit()
+                    return True
+                elif exit_button.clicked(event.pos):
+                    pygame.quit()
+                    return False
+
+        start_button.update()
+        #developers_button.update()
+        exit_button.update()
+        pygame.display.flip()
 
 
 if __name__ == '__main__':
     pygame.init()
-    pygame.display.set_caption('МоникаТале')
+    fps = 30
     size = width, height = 600, 700
+    running = start_screen(fps, size)
+    pygame.display.set_caption('МоникаТале')
     screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
-    running = True
-    fps = 30
     timer = 0
     timer_M = 0
-
     platform_down = pygame.sprite.Group()
     platform_up = pygame.sprite.Group()
     clock = pygame.time.Clock()
@@ -157,7 +235,6 @@ if __name__ == '__main__':
     left = pygame.sprite.Group()
     right = pygame.sprite.Group()
     characters = pygame.sprite.Group()
-
     ctrl = False
     Board(200, 400, 400, 400, up)
     Board(200, 600, 400, 600, down)
@@ -167,15 +244,14 @@ if __name__ == '__main__':
     move_left = False
     move_right = False
     Platform((250, 450))
-    Platform((300, 500))
+    Platform((300, 520))
     c = 0
     monika = Monika(load_image('MONIK_2.png'), 5, 2, 200, 0)
+    cube = Character((290, 550))
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                cube = Character(event.pos)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     move_left = True
@@ -198,9 +274,9 @@ if __name__ == '__main__':
                     move_right = False
                 elif event.key == pygame.K_UP:
                     move_up = False
+                    timer = 0
                 elif event.key == pygame.K_DOWN:
                     move_down = False
-                    timer = 0
         if timer >= fps:
             move_up = False
             timer = 0
