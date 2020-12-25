@@ -138,7 +138,7 @@ class Monika(pygame.sprite.Sprite):
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('МоникаТале')
-    size = width, height = 400, 500
+    size = width, height = 600, 700
     screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
     running = True
@@ -159,17 +159,17 @@ if __name__ == '__main__':
     characters = pygame.sprite.Group()
 
     ctrl = False
-    Board(100, 250, 300, 250, up)
-    Board(100, 450, 300, 450, down)
-    Board(100, 250, 100, 450, left)
-    Board(300, 250, 300, 456, right)
+    Board(200, 400, 400, 400, up)
+    Board(200, 600, 400, 600, down)
+    Board(200, 400, 200, 600, left)
+    Board(400, 400, 400, 606, right)
     move_up = False
     move_left = False
     move_right = False
-    Platform((150, 300))
-    Platform((200, 350))
+    Platform((250, 450))
+    Platform((300, 500))
     c = 0
-    monika = Monika(load_image('MONIK.png'), 5, 2, 150, 20)
+    monika = Monika(load_image('MONIK_2.png'), 5, 2, 200, 0)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
