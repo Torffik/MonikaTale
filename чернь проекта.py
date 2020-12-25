@@ -105,7 +105,9 @@ class Character(pygame.sprite.Sprite):
             if not (pygame.sprite.spritecollideany(self, border)):
                 if pygame.sprite.spritecollideany(self, platform_up):
                     v = pygame.sprite.spritecollideany(self, platform_up).vel
-                    self.rect = self.rect.move(v, 0)
+                    if (v < 0 and not pygame.sprite.spritecollideany(self, left)) \
+                        or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
+                        self.rect = self.rect.move(v, 0)
 
 
 if __name__ == '__main__':
