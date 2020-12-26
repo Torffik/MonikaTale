@@ -185,7 +185,9 @@ class Button():
             pygame.draw.rect(self.screen, 'white', (self.start_x - 10, self.start_y - 35, 200, 50), 3)
 
 def start_screen(fps, size):
+    pygame.init()
     fon = pygame.display.set_mode(size)
+    pygame.display.set_caption('МоникаТале')
     fon.fill((0, 0, 0))
     start_button = Button(200, 300, 100, 50, fon, 'НАЧАТЬ')
     #developers_button = Button(200, 375, 100, 125, fon, 'РАЗРАБОТЧИКИ')
@@ -211,6 +213,51 @@ def start_screen(fps, size):
         start_button.update()
         #developers_button.update()
         exit_button.update()
+        pygame.display.flip()
+
+class Health_bar():
+    def __init__(self):
+        pygame.draw.rect(screen, 'white', (200, 630, 200, 30), 3)
+        pygame.draw.rect(screen, 'red', (203, 633, 197, 27))
+        pygame.draw.rect(screen, 'green', (203, 633, 197, 27))
+
+    def update(self, hp, screen):
+        pygame.init()
+        fort = pygame.font.Font(None, 40)
+        hp_c = fort.render(f'{hp}/100', True, (255, 255, 255))
+        hp_rect = hp_c.get_rect()
+        hp_rect.y = 640
+        hp_rect.x = 420
+        screen.blit(hp_c, hp_rect)
+        pygame.draw.rect(screen, 'white', (200, 630, 200, 30), 3)
+        pygame.draw.rect(screen, 'red', (202, 632, 197, 27))
+        if hp >= 0:
+            pygame.draw.rect(screen, 'green', (202, 632, (1.97 * hp), 27))
+
+def death():
+    pygame.init()
+    death_screen = pygame.display.set_mode((600, 700))
+    pygame.display.set_caption('МоникаТале')
+    death_screen.fill((0, 0, 0))
+    font = pygame.font.Font(None, 70)
+    line = pygame.font.Font(None, 24)
+    line2 = line.render('Нажмите SPACE, чтобы выйти в главное меню', True, pygame.Color('white'))
+    line1 = line2.get_rect()
+    line1.y = 120
+    line1.x = 80
+    death_screen.blit(line2, line1)
+    string_rendered = font.render("ВЫ ПОГИБЛИ", True, pygame.Color('white'))
+    intro_rect = string_rendered.get_rect()
+    intro_rect.y = 50
+    intro_rect.x = 100
+    death_screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    return (start_screen(30, (600, 700)))
         pygame.display.flip()
 
 
@@ -248,6 +295,10 @@ if __name__ == '__main__':
     c = 0
     monika = Monika(load_image('MONIK_2.png'), 5, 2, 200, 0)
     cube = Character((290, 550))
+    counter = 0
+    hp = Health_bar()
+    invisibility = False
+    hp_counter = 100
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -277,16 +328,23 @@ if __name__ == '__main__':
                     timer = 0
                 elif event.key == pygame.K_DOWN:
                     move_down = False
+        screen.fill((0, 0, 0))
         if timer >= fps:
             move_up = False
             timer = 0
         if move_up:
             timer += 0.5
+        if timer_M == fps:
+            counter += 1
+            timer_M = 0
+        if timer_M == fps // 2:
+            hp_counter -= 1
+        hp.update(hp_counter, screen)
         timer_M += 1
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(30)
         pygame.display.flip()
-        screen.fill((0, 0, 0))
-
+        if hp_counter == 0:
+            running = death()
     pygame.quit()
