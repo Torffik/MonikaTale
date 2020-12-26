@@ -76,24 +76,34 @@ class Character(pygame.sprite.Sprite):
         super().__init__(all_spr)
         self.add(characters)
         self.rect = pygame.Rect(pos[0], pos[1], 30, 30)
-        self.v = 60
+        self.v = 80
+        self.g = 0
 
     def update(self):
-        global fps, move_up, move_down, move_left, move_right
+        global fps, move_up, move_down, move_left, move_right, stuck, energy
         if not pygame.sprite.spritecollideany(self, down):
             if not pygame.sprite.spritecollideany(self, platform_up):
-                self.rect = self.rect.move(0, self.v // fps)
+                self.rect = self.rect.move(0, (self.v + 10) // fps)
             else:
                 if pygame.sprite.spritecollideany(self, platform_down):
-                    self.rect = self.rect.move(0, self.v // fps)
+                    self.rect = self.rect.move(0, (self.v + 10) // fps)
+        if energy:
+            self.g += 9
+            self.rect = self.rect.move(0, -((self.v + (100 - self.g)) // fps))
+            if self.g > 90:
+                energy = False
+                self.g = 0
         if (move_up and (not pygame.sprite.spritecollideany(self, platform_down)
                          and not pygame.sprite.spritecollideany(self, up))):
-            self.rect = self.rect.move(0, -((self.v + 60) // fps))
+            if stuck:
+                self.rect = self.rect.move(0, -((self.v) // fps))
+            else:
+                self.rect = self.rect.move(0, -((self.v + (100)) // fps))
             if (pygame.sprite.spritecollideany(self, up)
-                    or pygame.sprite.spritecollideany(self, platform_down)
-                    or pygame.sprite.spritecollideany(self, left)
-                    or pygame.sprite.spritecollideany(self, right)):
-                move_up = False
+                    or pygame.sprite.spritecollideany(self, platform_down)):
+                stuck = True
+            else:
+                stuck = False
         if move_left and not pygame.sprite.spritecollideany(self, left) \
                 and not pygame.sprite.spritecollideany(self, platform_down):
             self.rect = self.rect.move(-((self.v + 60) // fps), 0)
@@ -290,15 +300,15 @@ if __name__ == '__main__':
     move_up = False
     move_left = False
     move_right = False
+    stuck = False
     Platform((250, 450))
-    Platform((300, 520))
-    c = 0
     monika = Monika(load_image('MONIK_2.png'), 5, 2, 200, 0)
     cube = Character((290, 550))
     counter = 0
     hp = Health_bar()
     invisibility = False
     hp_counter = 100
+    energy = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -324,16 +334,20 @@ if __name__ == '__main__':
                 elif event.key == pygame.K_RIGHT:
                     move_right = False
                 elif event.key == pygame.K_UP:
+                    if move_up:
+                        energy = True
                     move_up = False
                     timer = 0
+                    c = 0
                 elif event.key == pygame.K_DOWN:
                     move_down = False
         screen.fill((0, 0, 0))
-        if timer >= fps:
-            move_up = False
+        if timer == fps:
             timer = 0
+            move_up = False
+            energy = True
         if move_up:
-            timer += 0.5
+            timer += 1
         if timer_M == fps:
             counter += 1
             timer_M = 0
