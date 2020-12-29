@@ -270,11 +270,50 @@ def death():
                     return (start_screen(30, (600, 700)))
         pygame.display.flip()
 
+def dialog_start(fps, text):
+    global dialogue, screen
+    dialogue = True
+    fort = pygame.font.Font(None, 22)
+    for i in range(len(text)):
+        main_lines = text[i]
+        line = ''
+        dialogue_time = pygame.time.Clock()
+        timer = 0
+        dia = True
+        main_line = True
+        next = True
+        while dia:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    dia = False
+            da = main_lines[timer]
+            if next:
+                line += da
+            dia_c = fort.render(line, True, (255, 255, 255))
+            dia_rect = dia_c.get_rect()
+            dia_rect.y = 50
+            dia_rect.x = 400
+            screen.blit(dia_c, dia_rect)
+            all_spr.draw(screen)
+            all_spr.update()
+            next = False
+            if main_line:
+                if timer < len(main_lines) - 1:
+                    timer += 1
+                    next = True
+            dialogue_time.tick(fps // 2)
+            pygame.display.flip()
+            screen.fill((0, 0, 0))
+    dialogue = False
+
 
 if __name__ == '__main__':
     pygame.init()
     fps = 30
-    size = width, height = 600, 700
+    size = width, height = 700, 700
     running = start_screen(fps, size)
     pygame.display.set_caption('МоникаТале')
     screen = pygame.display.set_mode(size)
@@ -293,22 +332,20 @@ if __name__ == '__main__':
     right = pygame.sprite.Group()
     characters = pygame.sprite.Group()
     ctrl = False
-    Board(200, 400, 400, 400, up)
-    Board(200, 600, 400, 600, down)
-    Board(200, 400, 200, 600, left)
-    Board(400, 400, 400, 606, right)
     move_up = False
     move_left = False
     move_right = False
     stuck = False
-    Platform((250, 450))
     monika = Monika(load_image('MONIK_2.png'), 5, 2, 200, 0)
-    cube = Character((290, 550))
     counter = 0
     hp = Health_bar()
     invisibility = False
     hp_counter = 100
     energy = False
+    seconds_passed = 0
+    started = False
+    character_exist = False
+    dialogue = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -348,15 +385,33 @@ if __name__ == '__main__':
             energy = True
         if move_up:
             timer += 1
-        if timer_M == fps:
-            counter += 1
+        if timer_M >= fps:
+            if not dialogue:
+                seconds_passed += 1
             timer_M = 0
-        if timer_M == fps // 2:
-            hp_counter -= 1
+        if seconds_passed >= 3:
+            started = True
         hp.update(hp_counter, screen)
         timer_M += 1
-        all_spr.draw(screen)
-        all_spr.update()
+        if started:
+            if seconds_passed == 4:
+                dialog_start(fps, ['Итак...', 'Теперь нас ждет вечное счастье.',
+                                   'Если ты не согласен...', 'Может начнём?)', 'Хоть я делаю это из любви к тебе.'])
+                seconds_passed += 1
+            if seconds_passed <= 7:
+                all_spr.draw(screen)
+                all_spr.update()
+            elif seconds_passed >= 7:
+                if not character_exist:
+                    Platform((250, 450))
+                    cube = Character((290, 550))
+                    Board(200, 400, 400, 400, up)
+                    Board(200, 600, 400, 600, down)
+                    Board(200, 400, 200, 600, left)
+                    Board(400, 400, 400, 606, right)
+                    character_exist = True
+                all_spr.draw(screen)
+                all_spr.update()
         clock.tick(30)
         pygame.display.flip()
         if hp_counter == 0:
