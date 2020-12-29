@@ -80,47 +80,62 @@ class Character(pygame.sprite.Sprite):
         self.g = 0
 
     def update(self):
-        global fps, move_up, move_down, move_left, move_right, stuck, energy
-        if not pygame.sprite.spritecollideany(self, down):
-            if not pygame.sprite.spritecollideany(self, platform_up):
-                self.rect = self.rect.move(0, (self.v + 10) // fps)
-            else:
-                if pygame.sprite.spritecollideany(self, platform_down):
+        global fps, move_up, move_down, move_left, move_right, stuck, energy, blue
+        if blue:
+
+            if not pygame.sprite.spritecollideany(self, down):
+                if not pygame.sprite.spritecollideany(self, platform_up):
                     self.rect = self.rect.move(0, (self.v + 10) // fps)
-        if energy:
-            self.g += 9
-            self.rect = self.rect.move(0, -((self.v + (100 - self.g)) // fps))
-            if self.g > 90:
-                energy = False
-                self.g = 0
-        if (move_up and (not pygame.sprite.spritecollideany(self, platform_down)
-                         and not pygame.sprite.spritecollideany(self, up))):
-            if stuck:
-                self.rect = self.rect.move(0, -((self.v) // fps))
-            else:
-                self.rect = self.rect.move(0, -((self.v + (100)) // fps))
-            if (pygame.sprite.spritecollideany(self, up)
-                    or pygame.sprite.spritecollideany(self, platform_down)):
-                stuck = True
-            else:
-                stuck = False
-        if move_left and not pygame.sprite.spritecollideany(self, left) \
-                and not pygame.sprite.spritecollideany(self, platform_down):
-            self.rect = self.rect.move(-((self.v + 60) // fps), 0)
-        if move_right and not pygame.sprite.spritecollideany(self, right) \
-                and not pygame.sprite.spritecollideany(self, platform_down):
-            self.rect = self.rect.move(((self.v + 60) // fps), 0)
-        if pygame.sprite.spritecollideany(self, platform_up) \
-                or pygame.sprite.spritecollideany(self, platform_down):
-            if not (pygame.sprite.spritecollideany(self, border)):
-                if pygame.sprite.spritecollideany(self, platform_up):
-                    v = pygame.sprite.spritecollideany(self, platform_up).vel
-                    if (v < 0 and not pygame.sprite.spritecollideany(self, left)) \
-                            or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
-                        self.rect = self.rect.move(v, 0)
+                else:
+                    if pygame.sprite.spritecollideany(self, platform_down):
+                        self.rect = self.rect.move(0, (self.v + 10) // fps)
+            if energy:
+                self.g += 9
+                self.rect = self.rect.move(0, -((self.v + (100 - self.g)) // fps))
+                if self.g > 90:
+                    energy = False
+                    self.g = 0
+            if (move_up and (not pygame.sprite.spritecollideany(self, platform_down)
+                             and not pygame.sprite.spritecollideany(self, up))):
+                if stuck:
+                    self.rect = self.rect.move(0, -((self.v) // fps))
+                else:
+                    self.rect = self.rect.move(0, -((self.v + (100)) // fps))
+                if (pygame.sprite.spritecollideany(self, up)
+                        or pygame.sprite.spritecollideany(self, platform_down)):
+                    stuck = True
+                else:
+                    stuck = False
 
 
-class Monika(pygame.sprite.Sprite):
+            if move_left and not pygame.sprite.spritecollideany(self, left) \
+                    and not pygame.sprite.spritecollideany(self, platform_down):
+                self.rect = self.rect.move(-((self.v + 60) // fps), 0)
+            if move_right and not pygame.sprite.spritecollideany(self, right) \
+                    and not pygame.sprite.spritecollideany(self, platform_down):
+                self.rect = self.rect.move(((self.v + 60) // fps), 0)
+            if pygame.sprite.spritecollideany(self, platform_up) \
+                    or pygame.sprite.spritecollideany(self, platform_down):
+                if not (pygame.sprite.spritecollideany(self, border)):
+                    if pygame.sprite.spritecollideany(self, platform_up):
+                        v = pygame.sprite.spritecollideany(self, platform_up).vel
+                        if (v < 0 and not pygame.sprite.spritecollideany(self, left)) \
+                                or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
+                            self.rect = self.rect.move(v, 0)
+
+
+        else:
+            if move_up and not pygame.sprite.spritecollideany(self, up):
+                self.rect = self.rect.move(0, -((self.v + 60) // fps))
+            if move_down and not pygame.sprite.spritecollideany(self, down):
+                self.rect = self.rect.move(0, ((self.v + 60) // fps))
+            if move_left and not pygame.sprite.spritecollideany(self, left):
+                self.rect = self.rect.move(-((self.v + 60) // fps), 0)
+            if move_right and not pygame.sprite.spritecollideany(self, right):
+                self.rect = self.rect.move(((self.v + 60) // fps), 0)
+
+
+class Vrag(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_spr)
         self.frames = []
@@ -142,6 +157,7 @@ class Monika(pygame.sprite.Sprite):
         if timer_M % 5 == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
+
 
 class Button():
     def __init__(self, start_x, start_y, width, height, screen, text):
@@ -194,13 +210,14 @@ class Button():
             self.screen.blit(string_rendered, intro_rect)
             pygame.draw.rect(self.screen, 'white', (self.start_x - 10, self.start_y - 35, 200, 50), 3)
 
+
 def start_screen(fps, size):
     pygame.init()
     fon = pygame.display.set_mode(size)
     pygame.display.set_caption('МоникаТале')
     fon.fill((0, 0, 0))
     start_button = Button(200, 300, 100, 50, fon, 'НАЧАТЬ')
-    #developers_button = Button(200, 375, 100, 125, fon, 'РАЗРАБОТЧИКИ')
+    # developers_button = Button(200, 375, 100, 125, fon, 'РАЗРАБОТЧИКИ')
     exit_button = Button(200, 450, 100, 200, fon, 'ВЫХОД')
     on_button = False
     while True:
@@ -210,7 +227,7 @@ def start_screen(fps, size):
                 return False
             elif event.type == pygame.MOUSEMOTION:
                 start_button.on_it(event.pos)
-                #developers_button.on_it(event.pos)
+                # developers_button.on_it(event.pos)
                 exit_button.on_it(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if start_button.clicked(event.pos):
@@ -221,9 +238,10 @@ def start_screen(fps, size):
                     return False
 
         start_button.update()
-        #developers_button.update()
+        # developers_button.update()
         exit_button.update()
         pygame.display.flip()
+
 
 class Health_bar():
     def __init__(self):
@@ -243,6 +261,7 @@ class Health_bar():
         pygame.draw.rect(screen, 'red', (202, 632, 197, 27))
         if hp >= 0:
             pygame.draw.rect(screen, 'green', (202, 632, (1.97 * hp), 27))
+
 
 def death():
     pygame.init()
@@ -269,6 +288,7 @@ def death():
                 if event.key == pygame.K_SPACE:
                     return (start_screen(30, (600, 700)))
         pygame.display.flip()
+
 
 def dialog_start(fps, text):
     global dialogue, screen
@@ -335,8 +355,15 @@ if __name__ == '__main__':
     move_up = False
     move_left = False
     move_right = False
+    move_down = False
     stuck = False
-    monika = Monika(load_image('MONIK_2.png'), 5, 2, 200, 0)
+    blue = False
+
+    #    natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
+    #    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+    #    yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
+    monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
+
     counter = 0
     hp = Health_bar()
     invisibility = False
@@ -357,7 +384,9 @@ if __name__ == '__main__':
                     move_right = True
                 elif event.key == pygame.K_UP:
                     if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up):
+                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                        move_up = True
+                    elif not blue:
                         move_up = True
                 elif event.key == pygame.K_DOWN:
                     move_down = True
@@ -386,6 +415,9 @@ if __name__ == '__main__':
         if move_up:
             timer += 1
         if timer_M >= fps:
+            if seconds_passed % 10 == 0:
+                blue = not blue
+                print(blue)
             if not dialogue:
                 seconds_passed += 1
             timer_M = 0
@@ -394,6 +426,7 @@ if __name__ == '__main__':
         hp.update(hp_counter, screen)
         timer_M += 1
         if started:
+
             if seconds_passed == 4:
                 dialog_start(fps, ['Итак...', 'Теперь нас ждет вечное счастье.',
                                    'Если ты не согласен...', 'Может начнём?)', 'Хоть я делаю это из любви к тебе.'])
