@@ -2,7 +2,7 @@ import pygame
 import os
 import sys
 from random import randint
-
+import math
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -72,17 +72,20 @@ class Board(pygame.sprite.Sprite):
 
 class Character(pygame.sprite.Sprite):
     def __init__(self, pos):
-        self.image = load_image('heart.png')
+        self.red = load_image('heart.png')
         super().__init__(all_spr)
         self.add(characters)
         self.rect = pygame.Rect(pos[0], pos[1], 30, 30)
         self.v = 80
         self.g = 0
+        self.blue = load_image('heart_2.png')
+        self.image = self.red
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
         global fps, move_up, move_down, move_left, move_right, stuck, energy, blue
         if blue:
-
+            self.image = self.blue
             if not pygame.sprite.spritecollideany(self, down):
                 if not pygame.sprite.spritecollideany(self, platform_up):
                     self.rect = self.rect.move(0, (self.v + 10) // fps)
@@ -106,8 +109,6 @@ class Character(pygame.sprite.Sprite):
                     stuck = True
                 else:
                     stuck = False
-
-
             if move_left and not pygame.sprite.spritecollideany(self, left) \
                     and not pygame.sprite.spritecollideany(self, platform_down):
                 self.rect = self.rect.move(-((self.v + 60) // fps), 0)
@@ -122,9 +123,8 @@ class Character(pygame.sprite.Sprite):
                         if (v < 0 and not pygame.sprite.spritecollideany(self, left)) \
                                 or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
                             self.rect = self.rect.move(v, 0)
-
-
         else:
+            self.image = self.red
             if move_up and not pygame.sprite.spritecollideany(self, up):
                 self.rect = self.rect.move(0, -((self.v + 60) // fps))
             if move_down and not pygame.sprite.spritecollideany(self, down):
@@ -133,7 +133,6 @@ class Character(pygame.sprite.Sprite):
                 self.rect = self.rect.move(-((self.v + 60) // fps), 0)
             if move_right and not pygame.sprite.spritecollideany(self, right):
                 self.rect = self.rect.move(((self.v + 60) // fps), 0)
-
 
 class Vrag(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -329,6 +328,276 @@ def dialog_start(fps, text):
             screen.fill((0, 0, 0))
     dialogue = False
 
+class Projectale_Targeted(pygame.sprite.Sprite):
+    def __init__(self, image, target):
+        super().__init__(all_spr)
+        self.add(projectales)
+        self.image = load_image(image)
+        self.rect = self.image.get_rect()
+        out_space = False
+        self.now_a = 0
+        while not out_space:
+            self.rect.x = randint(100, 500)
+            self.rect.y = randint(300, 650)
+            if (200 < self.rect.x < 400) or (400 < self.rect.y < 600):
+                out_space = False
+            else:
+                out_space = True
+        self.targeted = False
+        self.target = target
+        self.start_move = False
+        self.c = 0
+        self.x_dif = self.target.rect.x - self.rect.x
+        self.y_dif = self.target.rect.y - self.rect.y
+        if self.target.rect.x > self.rect.x and self.target.rect.y > self.rect.y:
+            self.x_end = 2 * self.x_dif
+            self.y_end = 2 * self.y_dif
+        elif self.target.rect.x > self.rect.x and self.target.rect.y < self.rect.y:
+            self.x_end = 10 * self.x_dif
+            self.y_end = 10 * self.y_dif
+        elif self.target.rect.x < self.rect.x and self.target.rect.y > self.rect.y:
+            self.x_end = 2 * self.x_dif
+            self.y_end = 2 * self.y_dif
+        elif self.target.rect.x < self.rect.x and self.target.rect.y < self.rect.y:
+            self.x_end = 10 * self.x_dif
+            self.y_end = 10 * self.y_dif
+
+    def update(self):
+        global seconds_passed, timer_M, fps, invisibility, character_exist, hp_counter
+        if not self.targeted:
+            self.a = self.targetting()
+            self.image = pygame.transform.rotate(self.image, self.a)
+            self.targeted = True
+            self.start_timer = seconds_passed
+            self.mask = pygame.mask.from_surface(self.image)
+        else:
+            if not self.start_move:
+                if seconds_passed - self.start_timer == 2:
+                    self.start_move = True
+            else:
+                self.rect = self.rect.move(self.x_end // (fps * 2), self.y_end // (fps * 2))
+        if not invisibility and character_exist:
+            if pygame.sprite.collide_mask(self, cube):
+                invisibility = True
+                hp_counter -= 10
+
+    def targetting(self):
+        x_start = self.rect.x
+        y_start = self.rect.y
+        x_end = self.target.rect.x
+        y_end = self.target.rect.y
+        if x_start > x_end:
+            a = x_start - x_end
+        else:
+            a = x_end - x_start
+        if y_start > y_end:
+            b = y_start - y_end
+        else:
+            b = y_end - y_start
+        tg = a / b
+        angle = math.degrees(math.atan(tg))
+        if x_start > x_end and y_start > y_end:
+            return -180 + angle
+        elif x_start > x_end:
+            return -angle
+        elif y_start > y_end:
+            return 180 - angle
+        return angle
+
+class Projectale(pygame.sprite.Sprite):
+    def __init__(self, image, pos=None):
+        super().__init__(all_spr)
+        self.add(projectales)
+        self.image = load_image(image)
+        self.rect = self.image.get_rect()
+        if pos:
+            self.rect.x = pos[0]
+            self.rect.y = pos[1]
+        else:
+            out_space = False
+            while not out_space:
+                self.rect.x = randint(50, 500)
+                self.rect.y = randint(400, 600)
+                if 150 <= self.rect.x <= 400:
+                    out_space = False
+                else:
+                    out_space = True
+        if self.rect.x < 200:
+            self.image = pygame.transform.rotate(self.image, 90)
+            self.v = 100
+        else:
+            self.image = pygame.transform.rotate(self.image, -90)
+            self.v = -100
+        self.start_move = False
+        self.start_timer = seconds_passed
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def update(self):
+        global seconds_passed, timer_M, fps, invisibility, character_exist, hp_counter
+        if not self.start_move:
+            if seconds_passed - self.start_timer == 2:
+                self.start_move = True
+        else:
+            self.rect = self.rect.move(self.v / fps, 0)
+        if not invisibility and character_exist:
+            if pygame.sprite.collide_mask(self, cube):
+                invisibility = True
+                hp_counter -= 10
+
+def first_attack():
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, timer
+    pygame.init()
+    counter_pens = 0
+    attack = True
+    while attack:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    move_left = True
+                elif event.key == pygame.K_RIGHT:
+                    move_right = True
+                elif event.key == pygame.K_UP:
+                    if pygame.sprite.spritecollideany(cube, down) \
+                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                        move_up = True
+                    elif not blue:
+                        move_up = True
+                elif event.key == pygame.K_DOWN:
+                    move_down = True
+                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
+                    ctrl = True
+            elif event.type == pygame.KEYUP:
+                if event.key == 1073742048 or event.key == 1073742052:
+                    ctrl = False
+                elif event.key == pygame.K_LEFT:
+                    move_left = False
+                elif event.key == pygame.K_RIGHT:
+                    move_right = False
+                elif event.key == pygame.K_UP:
+                    if move_up:
+                        energy = True
+                    move_up = False
+                    timer = 0
+                    c = 0
+                elif event.key == pygame.K_DOWN:
+                    move_down = False
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            move_up = False
+            energy = True
+        if move_up:
+            timer += 1
+        if timer_M >= fps:
+            if seconds_passed % 2 == 0:
+                Projectale_Targeted('pen.png', cube)
+                counter_pens += 1
+            seconds_passed += 1
+            timer_M = 0
+        hp.update(hp_counter, screen)
+        if counter_pens >= 6 and seconds_passed >= 30:
+            attack = False
+        timer_M += 1
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if hp_counter == 0:
+            attack = False
+    print(seconds_passed)
+
+def second_attack():
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, timer
+    pygame.init()
+    counter_pens = 0
+    attack = True
+    while attack:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    move_left = True
+                elif event.key == pygame.K_RIGHT:
+                    move_right = True
+                elif event.key == pygame.K_UP:
+                    if pygame.sprite.spritecollideany(cube, down) \
+                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                        move_up = True
+                    elif not blue:
+                        move_up = True
+                elif event.key == pygame.K_DOWN:
+                    move_down = True
+                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
+                    ctrl = True
+            elif event.type == pygame.KEYUP:
+                if event.key == 1073742048 or event.key == 1073742052:
+                    ctrl = False
+                elif event.key == pygame.K_LEFT:
+                    move_left = False
+                elif event.key == pygame.K_RIGHT:
+                    move_right = False
+                elif event.key == pygame.K_UP:
+                    if move_up:
+                        energy = True
+                    move_up = False
+                    timer = 0
+                    c = 0
+                elif event.key == pygame.K_DOWN:
+                    move_down = False
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            move_up = False
+            energy = True
+        if move_up:
+            timer += 1
+        if timer_M >= fps:
+            if seconds_passed % 1 == 0 and counter_pens < 10:
+                Projectale('pen.png')
+                counter_pens += 1
+            seconds_passed += 1
+            timer_M = 0
+        hp.update(hp_counter, screen)
+        if counter_pens >= 10 and seconds_passed >= 50:
+            attack = False
+        timer_M += 1
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if hp_counter == 0:
+            attack = False
+    print(seconds_passed)
+
+def phase_1():
+    global seconds_passed, fps
+    first_attack()
+    second_attack()
+    dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
+                           'Однако, твои действия...', 'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й. . .'])
+    seconds_passed = 50
+
 
 if __name__ == '__main__':
     pygame.init()
@@ -350,6 +619,7 @@ if __name__ == '__main__':
     down = pygame.sprite.Group()
     left = pygame.sprite.Group()
     right = pygame.sprite.Group()
+    projectales = pygame.sprite.Group()
     characters = pygame.sprite.Group()
     ctrl = False
     move_up = False
@@ -358,7 +628,6 @@ if __name__ == '__main__':
     move_down = False
     stuck = False
     blue = False
-
     #    natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
     #    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     #    yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
@@ -367,12 +636,15 @@ if __name__ == '__main__':
     counter = 0
     hp = Health_bar()
     invisibility = False
+    invisibility_timer = 0
     hp_counter = 100
     energy = False
     seconds_passed = 0
     started = False
     character_exist = False
     dialogue = False
+    pen_counter = 0
+    attack = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -408,6 +680,11 @@ if __name__ == '__main__':
                 elif event.key == pygame.K_DOWN:
                     move_down = False
         screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
         if timer == fps:
             timer = 0
             move_up = False
@@ -415,9 +692,8 @@ if __name__ == '__main__':
         if move_up:
             timer += 1
         if timer_M >= fps:
-            if seconds_passed % 10 == 0:
+            if seconds_passed % 60 == 0:
                 blue = not blue
-                print(blue)
             if not dialogue:
                 seconds_passed += 1
             timer_M = 0
@@ -426,27 +702,26 @@ if __name__ == '__main__':
         hp.update(hp_counter, screen)
         timer_M += 1
         if started:
-
             if seconds_passed == 4:
                 dialog_start(fps, ['Итак...', 'Теперь нас ждет вечное счастье.',
                                    'Если ты не согласен...', 'Может начнём?)', 'Хоть я делаю это из любви к тебе.'])
                 seconds_passed += 1
-            if seconds_passed <= 7:
-                all_spr.draw(screen)
-                all_spr.update()
             elif seconds_passed >= 7:
                 if not character_exist:
-                    Platform((250, 450))
-                    cube = Character((290, 550))
+                    Platform((250, 500))
+                    cube = Character((250, 450))
                     Board(200, 400, 400, 400, up)
                     Board(200, 600, 400, 600, down)
                     Board(200, 400, 200, 600, left)
                     Board(400, 400, 400, 606, right)
                     character_exist = True
-                all_spr.draw(screen)
-                all_spr.update()
-        clock.tick(30)
+            if seconds_passed == 10:
+                phase_1()
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
         pygame.display.flip()
+        attack = False
         if hp_counter == 0:
             running = death()
     pygame.quit()
