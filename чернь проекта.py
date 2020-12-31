@@ -4,6 +4,7 @@ import sys
 from random import randint
 import math
 
+pygame.init()
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -211,7 +212,6 @@ class Button():
 
 
 def start_screen(fps, size):
-    pygame.init()
     fon = pygame.display.set_mode(size)
     pygame.display.set_caption('МоникаТале')
     fon.fill((0, 0, 0))
@@ -222,7 +222,6 @@ def start_screen(fps, size):
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
                 return False
             elif event.type == pygame.MOUSEMOTION:
                 start_button.on_it(event.pos)
@@ -230,10 +229,8 @@ def start_screen(fps, size):
                 exit_button.on_it(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if start_button.clicked(event.pos):
-                    pygame.quit()
                     return True
                 elif exit_button.clicked(event.pos):
-                    pygame.quit()
                     return False
 
         start_button.update()
@@ -263,8 +260,7 @@ class Health_bar():
 
 
 def death():
-    pygame.init()
-    death_screen = pygame.display.set_mode((600, 700))
+    death_screen = pygame.display.set_mode((700, 700))
     pygame.display.set_caption('МоникаТале')
     death_screen.fill((0, 0, 0))
     font = pygame.font.Font(None, 70)
@@ -285,7 +281,7 @@ def death():
                 return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    return (start_screen(30, (600, 700)))
+                    return (start_screen(30, (700, 700)))
         pygame.display.flip()
 
 
@@ -447,7 +443,7 @@ class Projectale(pygame.sprite.Sprite):
 def first_attack():
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
-        move_down, energy, blue, invisibility, invisibility_timer, timer
+        move_down, energy, blue, invisibility, invisibility_timer, timer, alive
     pygame.init()
     counter_pens = 0
     attack = True
@@ -515,12 +511,13 @@ def first_attack():
         pygame.display.flip()
         if hp_counter == 0:
             attack = False
+            alive = False
     print(seconds_passed)
 
 def second_attack():
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
-        move_down, energy, blue, invisibility, invisibility_timer, timer
+        move_down, energy, blue, invisibility, invisibility_timer, timer, alive
     pygame.init()
     counter_pens = 0
     attack = True
@@ -588,19 +585,22 @@ def second_attack():
         pygame.display.flip()
         if hp_counter == 0:
             attack = False
+            alive = False
     print(seconds_passed)
 
 def phase_1():
     global seconds_passed, fps
-    first_attack()
-    second_attack()
-    dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
+    if alive:
+        first_attack()
+    if alive:
+        second_attack()
+    if alive:
+        dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
                            'Однако, твои действия...', 'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й. . .'])
-    seconds_passed = 50
+        seconds_passed = 50
 
 
 if __name__ == '__main__':
-    pygame.init()
     fps = 30
     size = width, height = 700, 700
     running = start_screen(fps, size)
@@ -632,7 +632,6 @@ if __name__ == '__main__':
     #    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     #    yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
-
     counter = 0
     hp = Health_bar()
     invisibility = False
@@ -643,8 +642,9 @@ if __name__ == '__main__':
     started = False
     character_exist = False
     dialogue = False
-    pen_counter = 0
+    pen_counter = 17
     attack = False
+    alive = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -682,7 +682,7 @@ if __name__ == '__main__':
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
-        if invisibility_timer == fps * 3:
+        if invisibility_timer == fps:
             invisibility = False
             invisibility_timer = 0
         if timer == fps:
@@ -692,8 +692,6 @@ if __name__ == '__main__':
         if move_up:
             timer += 1
         if timer_M >= fps:
-            if seconds_passed % 60 == 0:
-                blue = not blue
             if not dialogue:
                 seconds_passed += 1
             timer_M = 0
@@ -719,9 +717,25 @@ if __name__ == '__main__':
                 phase_1()
         all_spr.draw(screen)
         all_spr.update()
+        if hp_counter <= 0:
+            platform_down.empty()
+            platform_up.empty()
+            border.empty()
+            all_spr.empty()
+            ladders.empty()
+            up.empty()
+            down.empty()
+            left.empty()
+            right.empty()
+            projectales.empty()
+            characters.empty()
+            running = death()
+            character_exist = False
+            hp_counter = 100
+            seconds_passed = 0
+            alive = True
+            monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
         clock.tick(fps)
         pygame.display.flip()
-        attack = False
-        if hp_counter == 0:
-            running = death()
     pygame.quit()
+    sys.exit()
