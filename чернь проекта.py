@@ -5,6 +5,8 @@ from random import randint
 import math
 
 pygame.init()
+
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -91,12 +93,14 @@ class Character(pygame.sprite.Sprite):
                 if not pygame.sprite.spritecollideany(self, platform_up):
                     if gravity_force:
                         self.rect = self.rect.move(0, (self.v + 600) // fps)
+                        move_up = False
                     else:
                         self.rect = self.rect.move(0, (self.v + 10) // fps)
                 else:
                     if pygame.sprite.spritecollideany(self, platform_down):
                         if gravity_force:
                             self.rect = self.rect.move(0, (self.v + 600) // fps)
+                            move_up = False
                         else:
                             self.rect = self.rect.move(0, (self.v + 10) // fps)
             else:
@@ -146,6 +150,7 @@ class Character(pygame.sprite.Sprite):
                 self.rect = self.rect.move(-((self.v + 60) // fps), 0)
             if move_right and not pygame.sprite.spritecollideany(self, right):
                 self.rect = self.rect.move(((self.v + 60) // fps), 0)
+
 
 class Vrag(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -252,6 +257,7 @@ def start_screen(fps, size):
         exit_button.update()
         pygame.display.flip()
 
+
 def beggining(size, fon):
     global fps
     fon.fill((0, 0, 0))
@@ -292,6 +298,8 @@ def beggining(size, fon):
             pygame.display.flip()
             fon.fill((0, 0, 0))
             speech.stop()
+
+
 class Health_bar():
     def __init__(self):
         pygame.draw.rect(screen, 'white', (200, 630, 200, 30), 3)
@@ -313,7 +321,7 @@ class Health_bar():
 
 
 def death():
-    death_screen = pygame.display.set_mode((700, 700))
+    death_screen = pygame.display.set_mode((700, 800))
     pygame.display.set_caption('МоникаТале')
     death_screen.fill((0, 0, 0))
     font = pygame.font.Font(None, 70)
@@ -334,7 +342,7 @@ def death():
                 return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    return (start_screen(30, (700, 700)))
+                    return (start_screen(30, (700, 800)))
         pygame.display.flip()
 
 
@@ -344,7 +352,18 @@ def dialog_start(fps, text):
     fort = pygame.font.Font(None, 22)
     for i in range(len(text)):
         main_lines = text[i]
+        a = -100
+        if len(main_lines) >= 40:
+            for j in range(len(main_lines)):
+                if main_lines[(len(main_lines) // 2) + j] == ' ':
+                    a = (len(main_lines) // 2) + j
+                    break
+            if a >= 10:
+                pass
+            else:
+                a = -100
         line = ''
+        new_line = ''
         dialogue_time = pygame.time.Clock()
         timer = 0
         dia = True
@@ -357,11 +376,21 @@ def dialog_start(fps, text):
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
                     dia = False
+                    screen.fill((0, 0, 0))
             da = main_lines[timer]
             if next:
-                line += da
-                if da != ' ' and dia:
+                if timer >= a and a != -100:
+                    new_line += da
+                else:
+                    line += da
+                if da != ' ' and da != '-' and dia:
                     speech.play(speech_sound)
+            if timer >= a and a != -100:
+                dia_c_new = fort.render(new_line, True, (255, 255, 255))
+                dia_rect_new = dia_c_new.get_rect()
+                dia_rect_new.y = 70
+                dia_rect_new.x = 396
+                screen.blit(dia_c_new, dia_rect_new)
             dia_c = fort.render(line, True, (255, 255, 255))
             dia_rect = dia_c.get_rect()
             dia_rect.y = 50
@@ -379,6 +408,7 @@ def dialog_start(fps, text):
             screen.fill((0, 0, 0))
             speech.stop()
     dialogue = False
+
 
 class Projectale_Targeted(pygame.sprite.Sprite):
     def __init__(self, image, target):
@@ -459,6 +489,7 @@ class Projectale_Targeted(pygame.sprite.Sprite):
             return 180 - angle
         return angle
 
+
 class Projectale(pygame.sprite.Sprite):
     def __init__(self, image, pos=None):
         super().__init__(all_spr)
@@ -501,6 +532,7 @@ class Projectale(pygame.sprite.Sprite):
                 damage_sound.play()
                 invisibility = True
                 hp_counter -= 10
+
 
 def first_attack(intervale, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
@@ -577,6 +609,7 @@ def first_attack(intervale, n):
             alive = False
     print(seconds_passed)
 
+
 def second_attack(intervale, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
@@ -651,6 +684,7 @@ def second_attack(intervale, n):
             attack = False
             alive = False
     print(seconds_passed)
+
 
 def third_attack(intervale, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
@@ -730,6 +764,7 @@ def third_attack(intervale, n):
             alive = False
     print(seconds_passed)
 
+
 def phase_1():
     global seconds_passed, fps
     if alive:
@@ -750,11 +785,12 @@ def phase_1():
     if alive:
         third_attack(3, 30)
 
+
 if __name__ == '__main__':
     speech_sound = pygame.mixer.Sound('data\speech.wav')
     speech = pygame.mixer.Channel(1)
     fps = 30
-    size = width, height = 700, 700
+    size = width, height = 700, 800
     running = start_screen(fps, size)
     pygame.display.set_caption('МоникаТале')
     screen = pygame.display.set_mode(size)
@@ -862,10 +898,10 @@ if __name__ == '__main__':
         timer_M += 1
         if started:
             if seconds_passed == 4:
-                dialog_start(fps, ['Итак...', 'Теперь нас ждет вечное счастье.',
-                                   'Если ты не согласен...', 'Может начнём?)', 'Хоть я делаю это из любви к тебе.'])
+                dialog_start(fps, ['Каждый день...', 'Я мечтала о будущем, что ждет нас.',
+                                   'Теперь... Ты просто уходишь?',
+                                   'Как ты можешь?', 'Я не позволю просто так стереть мои старания!'])
                 seconds_passed += 1
-                background_music.play(music_1)
             if seconds_passed >= 7:
                 if not character_exist:
                     cube = Character((250, 450))
@@ -874,6 +910,9 @@ if __name__ == '__main__':
                     Board(200, 400, 200, 600, left)
                     Board(400, 400, 400, 606, right)
                     character_exist = True
+                    dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
+                                       'Дамы вперёд, знаешь ли.'])
+                    background_music.play(music_1)
             if seconds_passed == 10:
                 phase_1()
         all_spr.draw(screen)
