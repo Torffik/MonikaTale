@@ -229,6 +229,8 @@ def start_screen(fps, size):
                 exit_button.on_it(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if start_button.clicked(event.pos):
+                    beggining(size, fon)
+                    pygame.mixer.Sound('data//begin.wav').play()
                     return True
                 elif exit_button.clicked(event.pos):
                     return False
@@ -238,7 +240,46 @@ def start_screen(fps, size):
         exit_button.update()
         pygame.display.flip()
 
-
+def beggining(size, fon):
+    global fps
+    fon.fill((0, 0, 0))
+    fort = pygame.font.Font('data//font.ttf', 25)
+    text = ['*Вы оказываетесь в пустой комнате с девушкой...', '*Это Моника.', '*Странный свет заполняет комнату...',
+            '*Вы понимаете...', '*В р е м я  н е п р и я т н о с т е й.  .  .']
+    for i in range(len(text)):
+        main_lines = text[i]
+        line = ''
+        dialogue_time = pygame.time.Clock()
+        timer = 0
+        dia = True
+        main_line = True
+        next = True
+        while dia:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    dia = False
+            da = main_lines[timer]
+            if next:
+                line += da
+                if da != ' ' and dia:
+                    speech.play(speech_sound)
+            dia_c = fort.render(line, True, (255, 255, 255))
+            dia_rect = dia_c.get_rect()
+            dia_rect.y = 50
+            dia_rect.x = 50
+            fon.blit(dia_c, dia_rect)
+            next = False
+            if main_line:
+                if timer < len(main_lines) - 1:
+                    timer += 1
+                    next = True
+            dialogue_time.tick(fps // 2)
+            pygame.display.flip()
+            fon.fill((0, 0, 0))
+            speech.stop()
 class Health_bar():
     def __init__(self):
         pygame.draw.rect(screen, 'white', (200, 630, 200, 30), 3)
@@ -286,7 +327,7 @@ def death():
 
 
 def dialog_start(fps, text):
-    global dialogue, screen
+    global dialogue, screen, speech_sound
     dialogue = True
     fort = pygame.font.Font(None, 22)
     for i in range(len(text)):
@@ -307,6 +348,8 @@ def dialog_start(fps, text):
             da = main_lines[timer]
             if next:
                 line += da
+                if da != ' ' and dia:
+                    speech.play(speech_sound)
             dia_c = fort.render(line, True, (255, 255, 255))
             dia_rect = dia_c.get_rect()
             dia_rect.y = 50
@@ -322,6 +365,7 @@ def dialog_start(fps, text):
             dialogue_time.tick(fps // 2)
             pygame.display.flip()
             screen.fill((0, 0, 0))
+            speech.stop()
     dialogue = False
 
 class Projectale_Targeted(pygame.sprite.Sprite):
@@ -368,12 +412,15 @@ class Projectale_Targeted(pygame.sprite.Sprite):
             self.mask = pygame.mask.from_surface(self.image)
         else:
             if not self.start_move:
-                if seconds_passed - self.start_timer == 2:
+                if seconds_passed - self.start_timer == 1:
                     self.start_move = True
             else:
                 self.rect = self.rect.move(self.x_end // (fps * 2), self.y_end // (fps * 2))
         if not invisibility and character_exist:
             if pygame.sprite.collide_mask(self, cube):
+                damage_sound = pygame.mixer.Sound(damage_sounds[randint(0, 1)])
+                damage_sound.set_volume(0.1)
+                damage_sound.play()
                 invisibility = True
                 hp_counter -= 10
 
@@ -437,10 +484,13 @@ class Projectale(pygame.sprite.Sprite):
             self.rect = self.rect.move(self.v / fps, 0)
         if not invisibility and character_exist:
             if pygame.sprite.collide_mask(self, cube):
+                damage_sound = pygame.mixer.Sound(damage_sounds[randint(0, 1)])
+                damage_sound.set_volume(0.1)
+                damage_sound.play()
                 invisibility = True
                 hp_counter -= 10
 
-def first_attack():
+def first_attack(intervale, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, timer, alive
@@ -496,13 +546,13 @@ def first_attack():
         if move_up:
             timer += 1
         if timer_M >= fps:
-            if seconds_passed % 2 == 0:
+            if seconds_passed % intervale == 0:
                 Projectale_Targeted('pen.png', cube)
                 counter_pens += 1
             seconds_passed += 1
             timer_M = 0
         hp.update(hp_counter, screen)
-        if counter_pens >= 6 and seconds_passed >= 30:
+        if counter_pens >= n and seconds_passed >= 30:
             attack = False
         timer_M += 1
         all_spr.draw(screen)
@@ -514,7 +564,7 @@ def first_attack():
             alive = False
     print(seconds_passed)
 
-def second_attack():
+def second_attack(intervale, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, timer, alive
@@ -570,13 +620,13 @@ def second_attack():
         if move_up:
             timer += 1
         if timer_M >= fps:
-            if seconds_passed % 1 == 0 and counter_pens < 10:
+            if seconds_passed % intervale == 0 and counter_pens < n:
                 Projectale('pen.png')
                 counter_pens += 1
             seconds_passed += 1
             timer_M = 0
         hp.update(hp_counter, screen)
-        if counter_pens >= 10 and seconds_passed >= 50:
+        if counter_pens >= n and seconds_passed >= 51:
             attack = False
         timer_M += 1
         all_spr.draw(screen)
@@ -591,16 +641,24 @@ def second_attack():
 def phase_1():
     global seconds_passed, fps
     if alive:
-        first_attack()
+        first_attack(2, 5)
     if alive:
-        second_attack()
+        second_attack(1, 14)
     if alive:
+        background_music.pause()
         dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
-                           'Однако, твои действия...', 'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й. . .'])
-        seconds_passed = 50
-
+                           'Однако, твои действия...',
+                           'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'])
+        seconds_passed = 52
+        background_music.unpause()
+    if alive:
+        first_attack(1, 15)
+    if alive:
+        second_attack(0.5, 25)
 
 if __name__ == '__main__':
+    speech_sound = pygame.mixer.Sound('data\speech.wav')
+    speech = pygame.mixer.Channel(1)
     fps = 30
     size = width, height = 700, 700
     running = start_screen(fps, size)
@@ -645,6 +703,13 @@ if __name__ == '__main__':
     pen_counter = 17
     attack = False
     alive = True
+    playing_background = False
+    damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
+    music_1 = pygame.mixer.Sound('data\Phase1.wav')
+    background_music = pygame.mixer.Channel(0)
+    music_1.set_volume(0.1)
+    spawning_sound = pygame.mixer.Sound('data//spawn.wav')
+    spawning_sound.set_volume(0.1)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -704,9 +769,9 @@ if __name__ == '__main__':
                 dialog_start(fps, ['Итак...', 'Теперь нас ждет вечное счастье.',
                                    'Если ты не согласен...', 'Может начнём?)', 'Хоть я делаю это из любви к тебе.'])
                 seconds_passed += 1
-            elif seconds_passed >= 7:
+                background_music.play(music_1)
+            if seconds_passed >= 7:
                 if not character_exist:
-                    Platform((250, 500))
                     cube = Character((250, 450))
                     Board(200, 400, 400, 400, up)
                     Board(200, 600, 400, 600, down)
