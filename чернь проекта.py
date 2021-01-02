@@ -84,21 +84,33 @@ class Character(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
-        global fps, move_up, move_down, move_left, move_right, stuck, energy, blue
+        global fps, move_up, move_down, move_left, move_right, stuck, energy, blue, gravity_force
         if blue:
             self.image = self.blue
             if not pygame.sprite.spritecollideany(self, down):
                 if not pygame.sprite.spritecollideany(self, platform_up):
-                    self.rect = self.rect.move(0, (self.v + 10) // fps)
+                    if gravity_force:
+                        self.rect = self.rect.move(0, (self.v + 600) // fps)
+                    else:
+                        self.rect = self.rect.move(0, (self.v + 10) // fps)
                 else:
                     if pygame.sprite.spritecollideany(self, platform_down):
-                        self.rect = self.rect.move(0, (self.v + 10) // fps)
+                        if gravity_force:
+                            self.rect = self.rect.move(0, (self.v + 600) // fps)
+                        else:
+                            self.rect = self.rect.move(0, (self.v + 10) // fps)
+            else:
+                if gravity_force:
+                    gravity_force = False
+                    energy = True
             if energy:
-                self.g += 9
-                self.rect = self.rect.move(0, -((self.v + (100 - self.g)) // fps))
-                if self.g > 90:
-                    energy = False
-                    self.g = 0
+                if (not pygame.sprite.spritecollideany(self, platform_down)
+                        and not pygame.sprite.spritecollideany(self, up)):
+                    self.g += 9
+                    self.rect = self.rect.move(0, -((self.v + (100 - self.g)) // fps))
+                    if self.g > 90:
+                        energy = False
+                        self.g = 0
             if (move_up and (not pygame.sprite.spritecollideany(self, platform_down)
                              and not pygame.sprite.spritecollideany(self, up))):
                 if stuck:
@@ -544,7 +556,8 @@ def first_attack(intervale, n):
             move_up = False
             energy = True
         if move_up:
-            timer += 1
+            if blue:
+                timer += 1
         if timer_M >= fps:
             if seconds_passed % intervale == 0:
                 Projectale_Targeted('pen.png', cube)
@@ -618,11 +631,90 @@ def second_attack(intervale, n):
             move_up = False
             energy = True
         if move_up:
-            timer += 1
+            if blue:
+                timer += 1
         if timer_M >= fps:
             if seconds_passed % intervale == 0 and counter_pens < n:
                 Projectale('pen.png')
                 counter_pens += 1
+            seconds_passed += 1
+            timer_M = 0
+        hp.update(hp_counter, screen)
+        if counter_pens >= n and seconds_passed >= 51:
+            attack = False
+        timer_M += 1
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    print(seconds_passed)
+
+def third_attack(intervale, n):
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, timer, alive, gravity_force
+    pygame.init()
+    counter_pens = 0
+    attack = True
+    blue = True
+    while attack:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    move_left = True
+                elif event.key == pygame.K_RIGHT:
+                    move_right = True
+                elif event.key == pygame.K_UP:
+                    if pygame.sprite.spritecollideany(cube, down) \
+                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                        move_up = True
+                    elif not blue:
+                        move_up = True
+                elif event.key == pygame.K_DOWN:
+                    move_down = True
+                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
+                    ctrl = True
+            elif event.type == pygame.KEYUP:
+                if event.key == 1073742048 or event.key == 1073742052:
+                    ctrl = False
+                elif event.key == pygame.K_LEFT:
+                    move_left = False
+                elif event.key == pygame.K_RIGHT:
+                    move_right = False
+                elif event.key == pygame.K_UP:
+                    if move_up:
+                        energy = True
+                    move_up = False
+                    timer = 0
+                    c = 0
+                elif event.key == pygame.K_DOWN:
+                    move_down = False
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            move_up = False
+            energy = True
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            if seconds_passed % 1 == 0 and counter_pens < n:
+                Projectale('pen.png')
+                counter_pens += 1
+            if seconds_passed % intervale == 0:
+                gravity_force = True
             seconds_passed += 1
             timer_M = 0
         hp.update(hp_counter, screen)
@@ -655,6 +747,8 @@ def phase_1():
         first_attack(1, 15)
     if alive:
         second_attack(0.5, 25)
+    if alive:
+        third_attack(3, 30)
 
 if __name__ == '__main__':
     speech_sound = pygame.mixer.Sound('data\speech.wav')
@@ -703,6 +797,7 @@ if __name__ == '__main__':
     pen_counter = 17
     attack = False
     alive = True
+    gravity_force = False
     playing_background = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
     music_1 = pygame.mixer.Sound('data\Phase1.wav')
@@ -755,7 +850,8 @@ if __name__ == '__main__':
             move_up = False
             energy = True
         if move_up:
-            timer += 1
+            if blue:
+                timer += 1
         if timer_M >= fps:
             if not dialogue:
                 seconds_passed += 1
