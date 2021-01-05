@@ -86,9 +86,11 @@ class Character(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
-        global fps, move_up, move_down, move_left, move_right, stuck, energy, blue, gravity_force
+        global fps, move_up, move_down, move_left, move_right, stuck, \
+            energy, blue, gravity_force, gravity_force_up, energy_reversed, rotated
         if blue:
-            self.image = self.blue
+            if not rotated:
+                self.image = self.blue
             if not pygame.sprite.spritecollideany(self, down):
                 if not pygame.sprite.spritecollideany(self, platform_up):
                     if gravity_force:
@@ -101,12 +103,31 @@ class Character(pygame.sprite.Sprite):
                         if gravity_force:
                             self.rect = self.rect.move(0, (self.v + 600) // fps)
                             move_up = False
+                        elif gravity_force_up:
+                            if not pygame.sprite.spritecollideany(self, platform_down) \
+                                    and not pygame.sprite.spritecollideany(self, up):
+                                self.rect = self.rect.move(0, -(self.v + 600) // fps)
+                                move_up = False
                         else:
                             self.rect = self.rect.move(0, (self.v + 10) // fps)
             else:
                 if gravity_force:
                     gravity_force = False
                     energy = True
+            if gravity_force_up:
+                self.rect = self.rect.move(0, -(self.v + 600) // fps)
+                if not rotated:
+                    self.image = pygame.transform.rotate(self.image, 180)
+                    rotated = True
+                if not (pygame.sprite.spritecollideany(self, up)
+                        or pygame.sprite.spritecollideany(self, platform_down)):
+                    move_up = False
+                else:
+                    self.rect = self.rect.move(0, (self.v + 600) // fps)
+                    gravity_force_up = False
+                    energy = False
+                    g = 0
+                    energy_reversed = True
             if energy:
                 if (not pygame.sprite.spritecollideany(self, platform_down)
                         and not pygame.sprite.spritecollideany(self, up)):
@@ -115,6 +136,16 @@ class Character(pygame.sprite.Sprite):
                     if self.g > 90:
                         energy = False
                         self.g = 0
+            elif energy_reversed:
+                if (not pygame.sprite.spritecollideany(self, platform_up)
+                        and not pygame.sprite.spritecollideany(self, down)):
+                    self.g += 18
+                    self.rect = self.rect.move(0, ((self.v + (100 - self.g)) // fps))
+                    if self.g > 90:
+                        energy_reversed = False
+                        self.g = 0
+                        self.image = self.blue
+                        rotated = False
             if (move_up and (not pygame.sprite.spritecollideany(self, platform_down)
                              and not pygame.sprite.spritecollideany(self, up))):
                 if stuck:
@@ -346,11 +377,12 @@ def death():
         pygame.display.flip()
 
 
-def dialog_start(fps, text):
+def dialog_start(fps, text, faces):
     global dialogue, screen, speech_sound
     dialogue = True
     fort = pygame.font.Font(None, 22)
     for i in range(len(text)):
+        monika.image = load_image(faces[i])
         main_lines = text[i]
         a = -100
         if len(main_lines) >= 40:
@@ -689,7 +721,7 @@ def second_attack(intervale, n):
 def third_attack(intervale, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
-        move_down, energy, blue, invisibility, invisibility_timer, timer, alive, gravity_force
+        move_down, energy, blue, invisibility, invisibility_timer, timer, alive, gravity_force, gravity_force_up
     pygame.init()
     counter_pens = 0
     attack = True
@@ -748,7 +780,7 @@ def third_attack(intervale, n):
                 Projectale('pen.png')
                 counter_pens += 1
             if seconds_passed % intervale == 0:
-                gravity_force = True
+                gravity_force_up = True
             seconds_passed += 1
             timer_M = 0
         hp.update(hp_counter, screen)
@@ -775,7 +807,8 @@ def phase_1():
         background_music.pause()
         dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
                            'Однако, твои действия...',
-                           'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'])
+                           'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'],
+                     ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_menace.png'])
         seconds_passed = 52
         background_music.unpause()
     if alive:
@@ -816,9 +849,10 @@ if __name__ == '__main__':
     move_down = False
     stuck = False
     blue = False
-    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
-    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
-    yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
+    rotated = False
+#    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
+#   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+#   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
     counter = 0
     hp = Health_bar()
@@ -834,6 +868,8 @@ if __name__ == '__main__':
     attack = False
     alive = True
     gravity_force = False
+    gravity_force_up = False
+    energy_reversed = False
     playing_background = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
     music_1 = pygame.mixer.Sound('data\Phase1.wav')
@@ -900,7 +936,9 @@ if __name__ == '__main__':
             if seconds_passed == 4:
                 dialog_start(fps, ['Каждый день...', 'Я мечтала о будущем, что ждет нас.',
                                    'Теперь... Ты просто уходишь?',
-                                   'Как ты можешь?', 'Я не позволю просто так стереть мои старания!'])
+                                   'Как ты можешь?', 'Я не позволю просто так стереть мои старания!'],
+                             ['MONIK_normal.png', 'MONIK_normal.png',
+                              'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_angry.png'])
                 seconds_passed += 1
             if seconds_passed >= 7:
                 if not character_exist:
@@ -911,7 +949,7 @@ if __name__ == '__main__':
                     Board(400, 400, 400, 606, right)
                     character_exist = True
                     dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
-                                       'Дамы вперёд, знаешь ли.'])
+                                       'Дамы вперёд, знаешь ли.'], ['MONIK_surprise.png', 'MONIK_wink.png'])
                     background_music.play(music_1)
             if seconds_passed == 10:
                 phase_1()
