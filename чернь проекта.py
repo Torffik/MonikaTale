@@ -816,9 +816,9 @@ if __name__ == '__main__':
     move_down = False
     stuck = False
     blue = False
-    #    natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
-    #    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
-    #    yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
+    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
+    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+    yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
     counter = 0
     hp = Health_bar()
