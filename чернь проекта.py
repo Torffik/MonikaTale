@@ -252,14 +252,26 @@ class Button():
             pygame.draw.rect(self.screen, 'white', (self.start_x - 10, self.start_y - 25, 200, 50), 3)
 
 
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+
+
 def start_screen(fps, size):
     fon = pygame.display.set_mode(size)
     pygame.display.set_caption('МоникаТале')
     fon.fill((0, 0, 0))
-    start_button = Button(200, 300, 100, 50, fon, 'НАЧАТЬ')
+
+    fon2 = pygame.transform.scale(load_image('logo.png'), (size))
+    fon.blit(fon2, (0, 0))
+
+    start_button = Button(200, 550, 100, 50, fon, 'НАЧАТЬ')
     # developers_button = Button(200, 375, 100, 125, fon, 'РАЗРАБОТЧИКИ')
-    exit_button = Button(200, 450, 100, 200, fon, 'ВЫХОД')
+    exit_button = Button(200, 650, 100, 200, fon, 'ВЫХОД')
     on_button = False
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -280,6 +292,7 @@ def start_screen(fps, size):
         # developers_button.update()
         exit_button.update()
         pygame.display.flip()
+
 
 
 def beggining(size, fon):
@@ -1010,7 +1023,10 @@ if __name__ == '__main__':
     speech = pygame.mixer.Channel(1)
     fps = 30
     size = width, height = 700, 800
+
+
     running = start_screen(fps, size)
+
     pygame.display.set_caption('МоникаТале')
     screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
