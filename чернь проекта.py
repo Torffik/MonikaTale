@@ -208,13 +208,11 @@ class Vrag(pygame.sprite.Sprite):
 
 
 class Button():
-    def __init__(self, start_x, start_y, width, height, screen, text):
+    def __init__(self, start_x, start_y, screen, text):
         self.on = False
         self.text = text
         self.start_x = start_x
         self.start_y = start_y
-        self.width = width
-        self.height = height
         self.font = pygame.font.Font('data//font.ttf', 30)
         self.screen = screen
 
@@ -223,6 +221,9 @@ class Button():
         y = pos[1]
         if (self.start_x - 10) <= x <= (self.start_x - 10 + 200) \
                 and (self.start_y - 35) <= y <= (self.start_y + 20):
+            if not self.on:
+                speech.stop()
+                speech.play(speech_sound)
             self.on = True
             return self.on
         else:
@@ -240,14 +241,14 @@ class Button():
             string_rendered = self.font.render(self.text, True, pygame.Color('green'))
             intro_rect = string_rendered.get_rect()
             intro_rect.y = self.start_y - 20
-            intro_rect.x = 200
+            intro_rect.x = self.start_x + 20
             self.screen.blit(string_rendered, intro_rect)
             pygame.draw.rect(self.screen, 'green', (self.start_x - 10, self.start_y - 25, 200, 50), 3)
         else:
             string_rendered = self.font.render(self.text, True, pygame.Color('white'))
             intro_rect = string_rendered.get_rect()
             intro_rect.y = self.start_y - 20
-            intro_rect.x = 200
+            intro_rect.x = self.start_x + 20
             self.screen.blit(string_rendered, intro_rect)
             pygame.draw.rect(self.screen, 'white', (self.start_x - 10, self.start_y - 25, 200, 50), 3)
 
@@ -255,8 +256,6 @@ class Button():
 def terminate():
     pygame.quit()
     sys.exit()
-
-
 
 
 def start_screen(fps, size):
@@ -267,9 +266,9 @@ def start_screen(fps, size):
     fon2 = pygame.transform.scale(load_image('logo.png'), (size))
     fon.blit(fon2, (0, 0))
 
-    start_button = Button(200, 550, 100, 50, fon, 'НАЧАТЬ')
-    # developers_button = Button(200, 375, 100, 125, fon, 'РАЗРАБОТЧИКИ')
-    exit_button = Button(200, 650, 100, 200, fon, 'ВЫХОД')
+    start_button = Button(200, 550, fon, 'НАЧАТЬ')
+    # developers_button = Button(200, 375, on, 'РАЗРАБОТЧИКИ')
+    exit_button = Button(200, 650, fon, 'ВЫХОД')
     on_button = False
 
     while True:
@@ -287,12 +286,10 @@ def start_screen(fps, size):
                     return True
                 elif exit_button.clicked(event.pos):
                     return False
-
         start_button.update()
         # developers_button.update()
         exit_button.update()
         pygame.display.flip()
-
 
 
 def beggining(size, fon):
@@ -300,7 +297,7 @@ def beggining(size, fon):
     fon.fill((0, 0, 0))
     fort = pygame.font.Font('data//font.ttf', 25)
     text = ['*Вы оказываетесь в пустой комнате с девушкой...', '*Это Моника.', '*Странный свет заполняет комнату...',
-            '*Вы понимаете...', '*В р е м я  н е п р и я т н о с т е й.  .  .']
+            '*Вы наполнены.   .   .   ж а ж д о й   к р о в и']
     for i in range(len(text)):
         main_lines = text[i]
         line = ''
@@ -448,6 +445,501 @@ def dialog_start(fps, text, faces):
     dialogue = False
 
 
+def your_turn():
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, \
+        hp, hp_counter, running, up_board, down_board, left_board, right_board, \
+        cube, move_up, move_down, move_left, move_right, turn
+    move_up = False
+    move_left = False
+    move_right = False
+    move_down = False
+    pygame.init()
+    turn = True
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    timer = 0
+    cube.rect.x = 12
+    cube.rect.y = 35
+    while turn:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if timer > 10:
+                        fight_button.on_it(cube.rect)
+                        act_button.on_it(cube.rect)
+                        items_button.on_it(cube.rect)
+                        mercy_button.on_it(cube.rect)
+                elif event.key == pygame.K_RIGHT:
+                    if timer > 10:
+                        fight_button.on_it(cube.rect)
+                        act_button.on_it(cube.rect)
+                        items_button.on_it(cube.rect)
+                        mercy_button.on_it(cube.rect)
+                if event.key == pygame.K_UP:
+                    if cube.rect.y > 35:
+                        cube.rect.y -= 75
+                    if timer > 10:
+                        fight_button.on_it(cube.rect)
+                        act_button.on_it(cube.rect)
+                        items_button.on_it(cube.rect)
+                        mercy_button.on_it(cube.rect)
+                elif event.key == pygame.K_DOWN:
+                    if cube.rect.y < 260:
+                        cube.rect.y += 75
+                    if timer > 10:
+                        fight_button.on_it(cube.rect)
+                        act_button.on_it(cube.rect)
+                        items_button.on_it(cube.rect)
+                        mercy_button.on_it(cube.rect)
+                elif event.key == pygame.K_SPACE:
+                    if timer > 10:
+                        if fight_button.clicked(cube.rect):
+                            hit_menu()
+                        if act_button.clicked(cube.rect):
+                            action_menu()
+                        if items_button.clicked(cube.rect):
+                            item_menu()
+                        if mercy_button.clicked(cube.rect):
+                            mercy_menu()
+        if turn:
+            screen.fill((0, 0, 0))
+            if timer_M >= fps:
+                seconds_passed += 1
+                timer_M = 0
+            if timer == 10:
+                up_board = Board(50, 400, 650, 400, up)
+                down_board = Board(50, 600, 650, 600, down)
+                left_board = Board(50, 400, 50, 600, left)
+                right_board = Board(650, 400, 650, 606, right)
+                fight_button = Button(20, 50, screen, 'БИТВА')
+                act_button = Button(20, 125, screen, 'ДЕЙСТВ')
+                items_button = Button(20, 200, screen, 'ПРЕДМЕТ')
+                mercy_button = Button(20, 275, screen, 'ПОЩАДА')
+                fight_button.on_it(cube.rect)
+            if timer > 10:
+                fight_button.update()
+                act_button.update()
+                items_button.update()
+                mercy_button.update()
+            timer_M += 1
+            timer += 1
+            all_spr.draw(screen)
+            all_spr.update()
+            clock.tick(fps)
+            pygame.display.flip()
+    screen.fill((0, 0, 0))
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    up_board = Board(200, 400, 400, 400, up)
+    down_board = Board(200, 600, 400, 600, down)
+    left_board = Board(200, 400, 200, 600, left)
+    right_board = Board(400, 400, 400, 606, right)
+    cube.rect.x = 250
+    cube.rect.y = 450
+
+
+def hit_menu():
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
+    screen.fill((0, 0, 0))
+    cube.rect.x = 60
+    cube.rect.y = 410
+    x = 100
+    y = 410
+    font = pygame.font.Font('data//font.ttf', 24)
+    lines = []
+    for i in range(len(enemies)):
+        if i % 2 == 0 and i != 0:
+            x += 200
+            y = 410
+        lines.append(Line(x, y, enemies[i]))
+        y += 30
+    choose = True
+    timer_check = timer_M
+    while choose:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if cube.rect.x > 55:
+                        cube.rect.x -= 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_RIGHT:
+                    if cube.rect.x < 405:
+                        cube.rect.x += 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                if event.key == pygame.K_UP:
+                    if cube.rect.y > 410:
+                        cube.rect.y -= 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_DOWN:
+                    if cube.rect.y < 440:
+                        cube.rect.y += 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_SPACE:
+                    choose = False
+                    hit()
+                elif event.key == pygame.K_ESCAPE:
+                    choose = False
+                    your_turn()
+        if turn:
+            screen.fill((0, 0, 0))
+            all_spr.draw(screen)
+            all_spr.update()
+            timer_M += 1
+            for a in lines:
+                a.on_it(cube.rect)
+                a.update()
+            clock.tick(fps)
+            pygame.display.flip()
+    for a in text:
+        a.kill()
+    timer_M = timer_check
+
+
+def hit():
+    global turn
+    turn = False
+
+
+def action_menu():
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
+    screen.fill((0, 0, 0))
+    cube.rect.x = 60
+    cube.rect.y = 410
+    x = 100
+    y = 410
+    font = pygame.font.Font('data//font.ttf', 24)
+    lines = []
+    for i in range(len(enemies)):
+        if i % 2 == 0 and i != 0:
+            x += 200
+            y = 410
+        lines.append(Line(x, y, enemies[i]))
+        y += 30
+    choose = True
+    timer_check = timer_M
+    while choose:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if cube.rect.x > 55:
+                        cube.rect.x -= 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_RIGHT:
+                    if cube.rect.x < 405:
+                        cube.rect.x += 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                if event.key == pygame.K_UP:
+                    if cube.rect.y > 410:
+                        cube.rect.y -= 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_DOWN:
+                    if cube.rect.y < 440:
+                        cube.rect.y += 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_SPACE:
+                    choose = False
+                    act_choose()
+                elif event.key == pygame.K_ESCAPE:
+                    choose = False
+                    your_turn()
+        if turn:
+            screen.fill((0, 0, 0))
+            all_spr.draw(screen)
+            all_spr.update()
+            timer_M += 1
+            for a in lines:
+                a.on_it(cube.rect)
+                a.update()
+            clock.tick(fps)
+            pygame.display.flip()
+    for a in text:
+        a.kill()
+    timer_M = timer_check
+
+
+def act_choose():
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, actions
+    screen.fill((0, 0, 0))
+    cube.rect.x = 60
+    cube.rect.y = 410
+    x = 100
+    y = 410
+    font = pygame.font.Font('data//font.ttf', 24)
+    lines = []
+    for i in range(len(actions)):
+        if i % 2 == 0 and i != 0:
+            x += 200
+            y = 410
+        lines.append(Line(x, y, actions[i]))
+        y += 30
+    choose = True
+    timer_check = timer_M
+    while choose:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if cube.rect.x > 55:
+                        cube.rect.x -= 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_RIGHT:
+                    if cube.rect.x < 405:
+                        cube.rect.x += 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                if event.key == pygame.K_UP:
+                    if cube.rect.y > 410:
+                        cube.rect.y -= 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_DOWN:
+                    if cube.rect.y < 440:
+                        cube.rect.y += 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_SPACE:
+                    choose = False
+                    act()
+                elif event.key == pygame.K_ESCAPE:
+                    choose = False
+                    your_turn()
+        if turn:
+            screen.fill((0, 0, 0))
+            all_spr.draw(screen)
+            all_spr.update()
+            timer_M += 1
+            for a in lines:
+                a.on_it(cube.rect)
+                a.update()
+            clock.tick(fps)
+            pygame.display.flip()
+    for a in text:
+        a.kill()
+    timer_M = timer_check
+
+
+def act():
+    global turn
+    turn = False
+
+
+def item_menu():
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, inventory
+    screen.fill((0, 0, 0))
+    cube.rect.x = 60
+    cube.rect.y = 410
+    x = 100
+    y = 410
+    font = pygame.font.Font('data//font.ttf', 24)
+    lines = []
+    for i in range(len(inventory)):
+        if i % 2 == 0 and i != 0:
+            x += 200
+            y = 410
+        lines.append(Line(x, y, inventory[i]))
+        y += 30
+    choose = True
+    timer_check = timer_M
+    while choose:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if cube.rect.x > 55:
+                        cube.rect.x -= 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_RIGHT:
+                    if cube.rect.x < 405:
+                        cube.rect.x += 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                if event.key == pygame.K_UP:
+                    if cube.rect.y > 410:
+                        cube.rect.y -= 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_DOWN:
+                    if cube.rect.y < 440:
+                        cube.rect.y += 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_SPACE:
+                    choose = False
+                    use()
+                elif event.key == pygame.K_ESCAPE:
+                    choose = False
+                    your_turn()
+        if turn:
+            screen.fill((0, 0, 0))
+            all_spr.draw(screen)
+            all_spr.update()
+            timer_M += 1
+            for a in lines:
+                a.on_it(cube.rect)
+                a.update()
+            clock.tick(fps)
+            pygame.display.flip()
+    for a in text:
+        a.kill()
+    timer_M = timer_check
+
+
+def use():
+    global turn
+    turn = False
+
+
+def mercy_menu():
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
+    screen.fill((0, 0, 0))
+    cube.rect.x = 60
+    cube.rect.y = 410
+    x = 100
+    y = 410
+    font = pygame.font.Font('data//font.ttf', 24)
+    lines = []
+    for i in range(len(enemies)):
+        if i % 2 == 0 and i != 0:
+            x += 200
+            y = 410
+        lines.append(Line(x, y, enemies[i]))
+        y += 30
+    choose = True
+    timer_check = timer_M
+    while choose:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if cube.rect.x > 55:
+                        cube.rect.x -= 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_RIGHT:
+                    if cube.rect.x < 405:
+                        cube.rect.x += 200
+                    for a in lines:
+                        a.on_it(cube.rect)
+                if event.key == pygame.K_UP:
+                    if cube.rect.y > 410:
+                        cube.rect.y -= 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_DOWN:
+                    if cube.rect.y < 440:
+                        cube.rect.y += 30
+                    for a in lines:
+                        a.on_it(cube.rect)
+                elif event.key == pygame.K_SPACE:
+                    choose = False
+                    mercy()
+                elif event.key == pygame.K_ESCAPE:
+                    choose = False
+                    your_turn()
+        if turn:
+            screen.fill((0, 0, 0))
+            all_spr.draw(screen)
+            all_spr.update()
+            timer_M += 1
+            for a in lines:
+                a.on_it(cube.rect)
+                a.update()
+            clock.tick(fps)
+            pygame.display.flip()
+    for a in text:
+        a.kill()
+    timer_M = timer_check
+
+
+def mercy():
+    global turn
+    turn = False
+
+
+class Line():
+    def __init__(self, x, y, line):
+        global screen
+        self.line = '* ' + line
+        self.font = pygame.font.Font('data//font.ttf', 24)
+        self.text = self.font.render(line, True, (255, 255, 255))
+        self.rect = self.text.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.on = False
+        screen.blit(self.text, self.rect)
+
+    def on_it(self, pos):
+        x = pos[0]
+        y = pos[1]
+        if self.rect.x - 40 == x and self.rect.y == y:
+            if not self.on:
+                speech.stop()
+                speech.play(speech_sound)
+            self.on = True
+            return self.on
+        else:
+            self.on = False
+            return self.on
+
+    def clicked(self, pos):
+        if self.on:
+            return True
+        else:
+            return False
+
+    def update(self):
+        global screen
+        if self.on:
+            self.text = self.font.render(self.line, True, pygame.Color('green'))
+            screen.blit(self.text, self.rect)
+        else:
+            self.text = self.font.render(self.line, True, pygame.Color('white'))
+            screen.blit(self.text, self.rect)
+
+
 class Projectale_Targeted(pygame.sprite.Sprite):
     def __init__(self, image, target):
         super().__init__(all_spr)
@@ -503,6 +995,8 @@ class Projectale_Targeted(pygame.sprite.Sprite):
                 damage_sound.play()
                 invisibility = True
                 hp_counter -= 10
+        if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
+            self.kill()
 
     def targetting(self):
         x_start = self.rect.x
@@ -570,6 +1064,9 @@ class Projectale(pygame.sprite.Sprite):
                 damage_sound.play()
                 invisibility = True
                 hp_counter -= 10
+        if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
+            self.kill()
+
 
 class Pen(pygame.sprite.Sprite):
     def __init__(self, x, y, side):
@@ -595,9 +1092,8 @@ class Pen(pygame.sprite.Sprite):
                 invisibility = True
                 hp_counter -= 10
         self.rect = self.rect.move(0, 75 // fps)
-        if self.rect.y >= 595:
-            all_spr.remove(self)
-            projectales.remove(self)
+        if self.rect.y < 0 or self.rect.y > 625 or self.rect.x < 0 or self.rect.x > width + 200:
+            self.kill()
 
 
 def first_attack(intervale, n, end_time):
@@ -831,6 +1327,7 @@ def third_attack(intervale, n, end_time):
             alive = False
     print(seconds_passed)
 
+
 def fourth_attack(intervale, n, end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
@@ -909,6 +1406,7 @@ def fourth_attack(intervale, n, end_time):
             attack = False
             alive = False
     print(seconds_passed)
+
 
 def fifth_attack(end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
@@ -1016,6 +1514,8 @@ def phase_1():
         fourth_attack(1, 10, 130)
     if alive:
         fifth_attack(145)
+    if alive:
+        your_turn()
 
 
 if __name__ == '__main__':
@@ -1023,10 +1523,7 @@ if __name__ == '__main__':
     speech = pygame.mixer.Channel(1)
     fps = 30
     size = width, height = 700, 800
-
-
     running = start_screen(fps, size)
-
     pygame.display.set_caption('МоникаТале')
     screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
@@ -1044,6 +1541,7 @@ if __name__ == '__main__':
     right = pygame.sprite.Group()
     projectales = pygame.sprite.Group()
     characters = pygame.sprite.Group()
+    text = pygame.sprite.Group()
     ctrl = False
     move_up = False
     move_left = False
@@ -1052,10 +1550,20 @@ if __name__ == '__main__':
     stuck = False
     blue = False
     rotated = False
-#    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
-#   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
-#   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
+    turn = False
+    enemies = []
+    actions = ['Оценить', 'Подмигнуть', 'Ответить на чувства(?)']
+    inventory = ['Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс']
+    #    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
+    #   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+    #   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
+    enemies.append('Моника')
+    enemies.append('???')
+    enemies.append('???')
+    enemies.append('???')
+    enemies.append('???')
+    enemies.append('???')
     counter = 0
     hp = Health_bar()
     invisibility = False
@@ -1155,10 +1663,10 @@ if __name__ == '__main__':
                     left_board = Board(200, 400, 200, 600, left)
                     right_board = Board(400, 400, 400, 606, right)
                     character_exist = True
-                    dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
-                                       'Дамы вперёд, знаешь ли.'], ['MONIK_surprise.png', 'MONIK_wink.png'])
-                    background_music.play(music_1)
-            if seconds_passed == 10:
+            if seconds_passed == 8:
+                dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
+                                   'Дамы вперёд, знаешь ли.'], ['MONIK_surprise.png', 'MONIK_wink.png'])
+                background_music.play(music_1)
                 phase_1()
         all_spr.draw(screen)
         all_spr.update()
