@@ -481,6 +481,7 @@ def monologue_start(fps, text):
             screen.blit(dia_c, dia_rect)
             all_spr.draw(screen)
             all_spr.update()
+            hp.update(hp_counter, screen)
             next = False
             if main_line:
                 if timer < len(main_lines) - 1:
@@ -583,6 +584,7 @@ def your_turn(start_text):
             timer += 1
             all_spr.draw(screen)
             all_spr.update()
+            hp.update(hp_counter, screen)
             clock.tick(fps)
             pygame.display.flip()
     screen.fill((0, 0, 0))
@@ -664,6 +666,7 @@ def hit_menu(start_text):
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
             all_spr.update()
+            hp.update(hp_counter, screen)
             timer_M += 1
             for a in lines:
                 a.on_it(cube.rect)
@@ -739,6 +742,7 @@ def action_menu(start_text):
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
             all_spr.update()
+            hp.update(hp_counter, screen)
             timer_M += 1
             for a in lines:
                 a.on_it(cube.rect)
@@ -838,6 +842,7 @@ def act_choose(start_text):
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
             all_spr.update()
+            hp.update(hp_counter, screen)
             timer_M += 1
             for a in lines:
                 a.on_it(cube.rect)
@@ -917,6 +922,7 @@ def item_menu(start_text):
             all_spr.draw(screen)
             all_spr.update()
             timer_M += 1
+            hp.update(hp_counter, screen)
             for a in lines:
                 a.on_it(cube.rect)
                 a.update()
@@ -998,6 +1004,7 @@ def mercy_menu(start_text):
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
             all_spr.update()
+            hp.update(hp_counter, screen)
             timer_M += 1
             for a in lines:
                 a.on_it(cube.rect)
@@ -1201,7 +1208,7 @@ class Pen(pygame.sprite.Sprite):
                 invisibility = True
                 hp_counter -= damage
         self.rect = self.rect.move(0, 75 // fps)
-        if self.rect.y < 0 or self.rect.y > 625 or self.rect.x < 0 or self.rect.x > width + 200:
+        if self.rect.y > 625 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
 
 
@@ -1516,7 +1523,7 @@ def fourth_attack(intervale, n, end_time):
     print(seconds_passed)
 
 
-def fifth_attack(end_time):
+def fifth_attack(end_time, difference, n):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, \
@@ -1524,9 +1531,8 @@ def fifth_attack(end_time):
         right_board, border, up, down, left, right
     pygame.init()
     attack = True
-    difference = 10
     a = 0
-    for i in range(50):
+    for i in range(n):
         if i % 10 == 0 and i != 0:
             difference = -difference
         Pen(190 + a, 350 - (15 * i), 1)
@@ -1603,7 +1609,7 @@ def phase_1():
     if alive:
         first_attack(2, 5, 20)
     if alive:
-        second_attack(1, 13, 39)
+        second_attack(1, 11, 39)
     if alive:
         background_music.pause()
         dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
@@ -1613,11 +1619,13 @@ def phase_1():
         seconds_passed = 40
         background_music.unpause()
     if alive:
+        fifth_attack(50, 7, 50)
+    if alive:
         first_attack(1, 15, 53)
     if alive:
-        second_attack(0.5, 30, 95)
+        second_attack(0.5, 30, 100)
     if alive:
-        fifth_attack(105)
+        fifth_attack(120, 10, 150)
     if alive:
         dialog_start(fps, ['Знаешь...', 'Я тут подумала, что отпущу тебя',
                            'Только при условии...',
@@ -1630,6 +1638,10 @@ def phase_1():
         third_attack(3, 15, 130)
     if alive:
         fourth_attack(1, 10, 145)
+    if alive:
+        fifth_attack(150, 10, 300)
+    if alive:
+        second_attack(1, 30, 200)
     if alive:
         dialog_start(fps, ['Хух...', 'Это даже как то утомляет',
                            'Слушай, у меня к тебе предложение',
@@ -1793,6 +1805,7 @@ if __name__ == '__main__':
         all_spr.draw(screen)
         all_spr.update()
         if hp_counter <= 0:
+            pygame.mixer.stop()
             platform_down.empty()
             platform_up.empty()
             border.empty()
