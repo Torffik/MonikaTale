@@ -445,7 +445,53 @@ def dialog_start(fps, text, faces):
     dialogue = False
 
 
-def your_turn():
+def monologue_start(fps, text):
+    global screen, speech_sound, timer_M
+    fort = pygame.font.Font('data//font.ttf', 18)
+    for i in range(len(text)):
+        main_lines = text[i]
+        a = -100
+        line = ''
+        new_line = ''
+        dialogue_time = pygame.time.Clock()
+        timer = 0
+        dia = True
+        main_line = True
+        next = True
+        while dia:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    dia = False
+                    screen.fill((0, 0, 0))
+            da = main_lines[timer]
+            if next:
+                line += da
+                if da != ' ' and da != '-' and dia:
+                    speech.play(speech_sound)
+            dia_c = fort.render(line, True, (255, 255, 255))
+            dia_rect = dia_c.get_rect()
+            dia_rect.y = 410
+            dia_rect.x = 100
+            if timer_M >= fps:
+                timer_M = 0
+            timer_M += 1
+            screen.blit(dia_c, dia_rect)
+            all_spr.draw(screen)
+            all_spr.update()
+            next = False
+            if main_line:
+                if timer < len(main_lines) - 1:
+                    timer += 1
+                    next = True
+            dialogue_time.tick(fps // 2)
+            pygame.display.flip()
+            screen.fill((0, 0, 0))
+            speech.stop()
+
+def your_turn(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, \
         hp, hp_counter, running, up_board, down_board, left_board, right_board, \
         cube, move_up, move_down, move_left, move_right, turn
@@ -504,13 +550,13 @@ def your_turn():
                 elif event.key == pygame.K_SPACE:
                     if timer > 10:
                         if fight_button.clicked(cube.rect):
-                            hit_menu()
+                            hit_menu(start_text)
                         if act_button.clicked(cube.rect):
-                            action_menu()
+                            action_menu(start_text)
                         if items_button.clicked(cube.rect):
-                            item_menu()
+                            item_menu(start_text)
                         if mercy_button.clicked(cube.rect):
-                            mercy_menu()
+                            mercy_menu(start_text)
         if turn:
             screen.fill((0, 0, 0))
             if timer_M >= fps:
@@ -525,12 +571,14 @@ def your_turn():
                 act_button = Button(20, 125, screen, 'ДЕЙСТВ')
                 items_button = Button(20, 200, screen, 'ПРЕДМЕТ')
                 mercy_button = Button(20, 275, screen, 'ПОЩАДА')
+                line = Line(100, 410, start_text, 18)
                 fight_button.on_it(cube.rect)
             if timer > 10:
                 fight_button.update()
                 act_button.update()
                 items_button.update()
                 mercy_button.update()
+                line.update()
             timer_M += 1
             timer += 1
             all_spr.draw(screen)
@@ -554,7 +602,7 @@ def your_turn():
     cube.rect.y = 450
 
 
-def hit_menu():
+def hit_menu(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
     screen.fill((0, 0, 0))
     cube.rect.x = 60
@@ -567,7 +615,7 @@ def hit_menu():
         if i % 2 == 0 and i != 0:
             x += 200
             y = 410
-        lines.append(Line(x, y, enemies[i]))
+        lines.append(Line(x, y, enemies[i], 24))
         y += 30
     choose = True
     timer_check = timer_M
@@ -579,31 +627,39 @@ def hit_menu():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if cube.rect.x > 55:
+                    if cube.rect.x > 60:
                         cube.rect.x -= 200
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_RIGHT:
-                    if cube.rect.x < 405:
-                        cube.rect.x += 200
+                    cube.rect.x += 200
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.x -= 200
                 if event.key == pygame.K_UP:
                     if cube.rect.y > 410:
                         cube.rect.y -= 30
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_DOWN:
-                    if cube.rect.y < 440:
-                        cube.rect.y += 30
+                    cube.rect.y += 30
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.y -= 30
                 elif event.key == pygame.K_SPACE:
                     choose = False
+                    cube.rect.x = 9000
+                    cube.rect.y = 9000
                     hit()
                 elif event.key == pygame.K_ESCAPE:
                     choose = False
-                    your_turn()
+                    your_turn(start_text)
         if turn:
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
@@ -623,8 +679,7 @@ def hit():
     global turn
     turn = False
 
-
-def action_menu():
+def action_menu(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
     screen.fill((0, 0, 0))
     cube.rect.x = 60
@@ -637,7 +692,7 @@ def action_menu():
         if i % 2 == 0 and i != 0:
             x += 200
             y = 410
-        lines.append(Line(x, y, enemies[i]))
+        lines.append(Line(x, y, enemies[i], 24))
         y += 30
     choose = True
     timer_check = timer_M
@@ -649,31 +704,37 @@ def action_menu():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if cube.rect.x > 55:
+                    if cube.rect.x > 60:
                         cube.rect.x -= 200
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_RIGHT:
-                    if cube.rect.x < 405:
-                        cube.rect.x += 200
+                    cube.rect.x += 200
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.x -= 200
                 if event.key == pygame.K_UP:
                     if cube.rect.y > 410:
                         cube.rect.y -= 30
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_DOWN:
-                    if cube.rect.y < 440:
-                        cube.rect.y += 30
+                    cube.rect.y += 30
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.y -= 30
                 elif event.key == pygame.K_SPACE:
                     choose = False
-                    act_choose()
+                    act_choose(start_text)
                 elif event.key == pygame.K_ESCAPE:
                     choose = False
-                    your_turn()
+                    your_turn(start_text)
         if turn:
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
@@ -689,8 +750,8 @@ def action_menu():
     timer_M = timer_check
 
 
-def act_choose():
-    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, actions
+def act_choose(start_text):
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, actions, confessed, damage, turn
     screen.fill((0, 0, 0))
     cube.rect.x = 60
     cube.rect.y = 410
@@ -702,7 +763,7 @@ def act_choose():
         if i % 2 == 0 and i != 0:
             x += 200
             y = 410
-        lines.append(Line(x, y, actions[i]))
+        lines.append(Line(x, y, actions[i], 24))
         y += 30
     choose = True
     timer_check = timer_M
@@ -714,31 +775,65 @@ def act_choose():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if cube.rect.x > 55:
+                    if cube.rect.x > 60:
                         cube.rect.x -= 200
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_RIGHT:
-                    if cube.rect.x < 405:
-                        cube.rect.x += 200
+                    cube.rect.x += 200
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.x -= 200
                 if event.key == pygame.K_UP:
                     if cube.rect.y > 410:
                         cube.rect.y -= 30
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_DOWN:
-                    if cube.rect.y < 440:
-                        cube.rect.y += 30
+                    cube.rect.y += 30
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.y -= 30
                 elif event.key == pygame.K_SPACE:
                     choose = False
-                    act()
+                    cube.rect.x = 9000
+                    cube.rect.y = 9000
+                    for a in lines:
+                        if a.clicked(cube.rect):
+                            chosen = a
+                            break
+                    if chosen.line == '* Оценить':
+                        monologue_start(fps, [f'МОНИКА  АТАКА: {damage}  ЗАЩИТА: 50    Видимо, любит вас...',
+                                              'Также, разбирается в литературе'])
+                    elif chosen.line == '* Подмигнуть':
+                        monologue_start(fps, ['Вы неуверенно подмигиваете...',
+                                              'Моника подмигивает в ответ.', 'Однако... Эффекта никакого не было.'])
+                        dialog_start(fps, ['.'], ['MONIK_wink.png'])
+                    elif chosen.line == '* Признаться':
+                        if not confessed:
+                            confessed = True
+                            monologue_start(fps, ['Вы говорите Монике, что всегда хотели быть с ней...',
+                                                  'Это супер эффективно!', 'Атака снижена!'])
+                            damage = 5
+                            dialog_start(fps, ['...', 'Правда?',
+                                               'Я даже не знаю, что делать.',
+                                               'Я так счастлива, что ты наконец ответил.'],
+                                         ['MONIK_wink.png', 'MONIK_wink.png', 'MONIK_wink.png', 'MONIK_wink.png'])
+                        else:
+                            monologue_start(fps, ['Вы говорите Монике, что всегда хотели быть с ней...',
+                                                  'Она смотрит на вас с недопониманием.'])
+                            dialog_start(fps, ['...', 'Мне два раза говорить не нужно, дорогуша.'],
+                                         ['MONIK_surprise.png', 'MONIK_wink.png'])
+                    turn = False
                 elif event.key == pygame.K_ESCAPE:
                     choose = False
-                    your_turn()
+                    your_turn(start_text)
         if turn:
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
@@ -754,13 +849,8 @@ def act_choose():
     timer_M = timer_check
 
 
-def act():
-    global turn
-    turn = False
-
-
-def item_menu():
-    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, inventory
+def item_menu(start_text):
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, inventory, hp_counter, turn
     screen.fill((0, 0, 0))
     cube.rect.x = 60
     cube.rect.y = 410
@@ -772,7 +862,7 @@ def item_menu():
         if i % 2 == 0 and i != 0:
             x += 200
             y = 410
-        lines.append(Line(x, y, inventory[i]))
+        lines.append(Line(x, y, inventory[i], 24))
         y += 30
     choose = True
     timer_check = timer_M
@@ -784,31 +874,44 @@ def item_menu():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if cube.rect.x > 55:
+                    if cube.rect.x > 60:
                         cube.rect.x -= 200
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_RIGHT:
-                    if cube.rect.x < 405:
-                        cube.rect.x += 200
+                    cube.rect.x += 200
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.x -= 200
                 if event.key == pygame.K_UP:
                     if cube.rect.y > 410:
                         cube.rect.y -= 30
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_DOWN:
-                    if cube.rect.y < 440:
-                        cube.rect.y += 30
+                    cube.rect.y += 30
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.y -= 30
                 elif event.key == pygame.K_SPACE:
                     choose = False
-                    use()
+                    cube.rect.x = 9000
+                    cube.rect.y = 9000
+                    monologue_start(fps, ['Вы съедаете один из кучи кексов...', 'Вы восстановили 20 ОЗ!'])
+                    hp_counter += 20
+                    inventory.remove('Шок. Кекс')
+                    if hp_counter > 100:
+                        hp_counter = 100
+                    turn = False
                 elif event.key == pygame.K_ESCAPE:
                     choose = False
-                    your_turn()
+                    your_turn(start_text)
         if turn:
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
@@ -824,13 +927,8 @@ def item_menu():
     timer_M = timer_check
 
 
-def use():
-    global turn
-    turn = False
-
-
-def mercy_menu():
-    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
+def mercy_menu(start_text):
+    global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies, mercy, turn
     screen.fill((0, 0, 0))
     cube.rect.x = 60
     cube.rect.y = 410
@@ -842,7 +940,7 @@ def mercy_menu():
         if i % 2 == 0 and i != 0:
             x += 200
             y = 410
-        lines.append(Line(x, y, enemies[i]))
+        lines.append(Line(x, y, enemies[i], 24))
         y += 30
     choose = True
     timer_check = timer_M
@@ -854,31 +952,48 @@ def mercy_menu():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if cube.rect.x > 55:
+                    if cube.rect.x > 60:
                         cube.rect.x -= 200
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_RIGHT:
-                    if cube.rect.x < 405:
-                        cube.rect.x += 200
+                    cube.rect.x += 200
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.x -= 200
                 if event.key == pygame.K_UP:
                     if cube.rect.y > 410:
                         cube.rect.y -= 30
                     for a in lines:
                         a.on_it(cube.rect)
                 elif event.key == pygame.K_DOWN:
-                    if cube.rect.y < 440:
-                        cube.rect.y += 30
+                    cube.rect.y += 30
+                    flag = False
                     for a in lines:
-                        a.on_it(cube.rect)
+                        if a.on_it(cube.rect):
+                            flag = True
+                    if not flag:
+                        cube.rect.y -= 30
                 elif event.key == pygame.K_SPACE:
                     choose = False
-                    mercy()
+                    cube.rect.x = 9000
+                    cube.rect.y = 9000
+                    if mercy:
+                        dialog_start(fps, ['Значит, ты все таки решил?',
+                                           'Просто уйти?',
+                                           'А я останусь тут навечно?', 'Чтож... Прощай...'],
+                                     ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png'])
+                        turn = False
+                        mercy = False
+                    else:
+                        monologue_start(fps, ['Кажется Моника еще не готова просто так принять пощаду...'])
+                        turn = False
                 elif event.key == pygame.K_ESCAPE:
                     choose = False
-                    your_turn()
+                    your_turn(start_text)
         if turn:
             screen.fill((0, 0, 0))
             all_spr.draw(screen)
@@ -893,17 +1008,11 @@ def mercy_menu():
         a.kill()
     timer_M = timer_check
 
-
-def mercy():
-    global turn
-    turn = False
-
-
 class Line():
-    def __init__(self, x, y, line):
+    def __init__(self, x, y, line, size):
         global screen
         self.line = '* ' + line
-        self.font = pygame.font.Font('data//font.ttf', 24)
+        self.font = pygame.font.Font('data//font.ttf', size)
         self.text = self.font.render(line, True, (255, 255, 255))
         self.rect = self.text.get_rect()
         self.rect.x = x
@@ -994,7 +1103,7 @@ class Projectale_Targeted(pygame.sprite.Sprite):
                 damage_sound.set_volume(0.1)
                 damage_sound.play()
                 invisibility = True
-                hp_counter -= 10
+                hp_counter -= damage
         if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
 
@@ -1063,7 +1172,7 @@ class Projectale(pygame.sprite.Sprite):
                 damage_sound.set_volume(0.1)
                 damage_sound.play()
                 invisibility = True
-                hp_counter -= 10
+                hp_counter -= damage
         if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
 
@@ -1090,7 +1199,7 @@ class Pen(pygame.sprite.Sprite):
                 damage_sound.set_volume(0.1)
                 damage_sound.play()
                 invisibility = True
-                hp_counter -= 10
+                hp_counter -= damage
         self.rect = self.rect.move(0, 75 // fps)
         if self.rect.y < 0 or self.rect.y > 625 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
@@ -1153,7 +1262,7 @@ def first_attack(intervale, n, end_time):
             if blue:
                 timer += 1
         if timer_M >= fps:
-            if seconds_passed % intervale == 0:
+            if seconds_passed % intervale == 0 and counter_pens < n:
                 Projectale_Targeted('pen.png', cube)
                 counter_pens += 1
             seconds_passed += 1
@@ -1169,7 +1278,6 @@ def first_attack(intervale, n, end_time):
         if hp_counter == 0:
             attack = False
             alive = False
-    print(seconds_passed)
 
 
 def second_attack(intervale, n, end_time):
@@ -1491,31 +1599,47 @@ def fifth_attack(end_time):
 
 
 def phase_1():
-    global seconds_passed, fps
+    global seconds_passed, fps, mercy
     if alive:
-        first_attack(2, 5, 30)
+        first_attack(2, 5, 20)
     if alive:
-        second_attack(1, 14, 52)
+        second_attack(1, 13, 39)
     if alive:
         background_music.pause()
         dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
                            'Однако, твои действия...',
                            'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'],
                      ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_menace.png'])
-        seconds_passed = 52
+        seconds_passed = 40
         background_music.unpause()
     if alive:
-        first_attack(1, 15, 68)
+        first_attack(1, 15, 53)
     if alive:
-        second_attack(0.5, 25, 93)
+        second_attack(0.5, 30, 95)
     if alive:
-        third_attack(3, 15, 115)
+        fifth_attack(105)
     if alive:
-        fourth_attack(1, 10, 130)
+        dialog_start(fps, ['Знаешь...', 'Я тут подумала, что отпущу тебя',
+                           'Только при условии...',
+                           'Что ты переживешь следующую атаку...'],
+                     ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_menace.png'])
+        seconds_passed = 105
     if alive:
-        fifth_attack(145)
+        your_turn('Наконец, вы можете сделать свой ход.')
     if alive:
-        your_turn()
+        third_attack(3, 15, 130)
+    if alive:
+        fourth_attack(1, 10, 145)
+    if alive:
+        dialog_start(fps, ['Хух...', 'Это даже как то утомляет',
+                           'Слушай, у меня к тебе предложение',
+                           'Давай останемся тут навечно, не завершая твой ход никогда?',
+                           'Я просто очень боюсь остаться одна...', 'Пожалуйста, сделай верный выбор...'],
+                     ['MONIK_tired.png', 'MONIK_tired.png', 'MONIK_tired.png',
+                      'MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png'])
+        mercy = True
+        while mercy:
+            your_turn('Моника щадит вас...')
 
 
 if __name__ == '__main__':
@@ -1551,24 +1675,21 @@ if __name__ == '__main__':
     blue = False
     rotated = False
     turn = False
+    mercy = False
     enemies = []
-    actions = ['Оценить', 'Подмигнуть', 'Ответить на чувства(?)']
+    actions = ['Оценить', 'Подмигнуть', 'Признаться']
     inventory = ['Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс']
     #    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
     #   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     #   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
     enemies.append('Моника')
-    enemies.append('???')
-    enemies.append('???')
-    enemies.append('???')
-    enemies.append('???')
-    enemies.append('???')
     counter = 0
     hp = Health_bar()
     invisibility = False
     invisibility_timer = 0
     hp_counter = 100
+    damage = 10
     energy = False
     seconds_passed = 0
     started = False
@@ -1581,6 +1702,7 @@ if __name__ == '__main__':
     gravity_force_up = False
     energy_reversed = False
     playing_background = False
+    confessed = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
     music_1 = pygame.mixer.Sound('data\Phase1.wav')
     background_music = pygame.mixer.Channel(0)
