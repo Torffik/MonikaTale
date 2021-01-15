@@ -185,6 +185,50 @@ class Character(pygame.sprite.Sprite):
 
 class Vrag(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
+
+        super().__init__(all_spr)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.frames_main = self.frames
+        self.frames = []
+        self.cur_frame = 0
+        self.image = self.frames_main[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        global animation
+        if timer_M % 5 == 0:
+            if not animation:
+                self.cur_frame = (self.cur_frame + 1) % len(self.frames_main)
+                self.image = self.frames_main[self.cur_frame]
+            else:
+                self.cur_frame_animation = (self.cur_frame_animation + 1) % len(self.frames)
+                self.image = self.frames[self.cur_frame_animation]
+                if self.cur_frame_animation == len(self.frames) - 1:
+                    animation = False
+                    self.frames = []
+
+    def replacement(self, sheet, columns, rows, x, y):
+        global animation
+        self.cut_sheet(sheet, columns, rows)
+        print(len(self.frames))
+        self.cur_frame_animation = 0
+        self.rect = self.rect.move(x, y)
+        animation = True
+
+
+class Hit(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+
         super().__init__(all_spr)
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
@@ -203,8 +247,14 @@ class Vrag(pygame.sprite.Sprite):
 
     def update(self):
         if timer_M % 5 == 0:
+
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
+
+            if self.cur_frame == len(self.frames) - 1:
+                self.kill()
+
+
 
 
 class Button():
@@ -492,6 +542,7 @@ def monologue_start(fps, text):
             screen.fill((0, 0, 0))
             speech.stop()
 
+
 def your_turn(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, \
         hp, hp_counter, running, up_board, down_board, left_board, right_board, \
@@ -679,8 +730,41 @@ def hit_menu(start_text):
 
 
 def hit():
-    global turn
+    global turn, screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
     turn = False
+    load_image('hit_eye', )
+    Hit(load_image('attack.png'), 4, 1, 200, 50)
+    screen.fill((0, 0, 0))
+    cube.rect.x = 74120
+    cube.rect.y = 74210
+    timer_check = timer_M
+    locol_f = True
+    while locol_f:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+
+                if event.key == pygame.K_SPACE:
+                    choose = False
+                    cube.rect.x = 9000
+                    cube.rect.y = 9000
+                    hit()
+
+
+        screen.fill((0, 0, 0))
+        all_spr.draw(screen)
+        all_spr.update()
+        hp.update(hp_counter, screen)
+        timer_M += 1
+        clock.tick(fps)
+        pygame.display.flip()
+    for a in text:
+        a.kill()
+    timer_M = timer_check
+
 
 def action_menu(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
@@ -828,7 +912,7 @@ def act_choose(start_text):
                             dialog_start(fps, ['...', 'Правда?',
                                                'Я даже не знаю, что делать.',
                                                'Я так счастлива, что ты наконец ответил.'],
-                                         ['MONIK_wink.png', 'MONIK_wink.png', 'MONIK_wink.png', 'MONIK_wink.png'])
+                                         ['MONIK_blush.png', 'MONIK_blush.png', 'MONIK_blush.png', 'MONIK_happy.png'])
                         else:
                             monologue_start(fps, ['Вы говорите Монике, что всегда хотели быть с ней...',
                                                   'Она смотрит на вас с недопониманием.'])
@@ -988,10 +1072,11 @@ def mercy_menu(start_text):
                     cube.rect.x = 9000
                     cube.rect.y = 9000
                     if mercy:
-                        dialog_start(fps, ['Значит, ты все таки решил?',
-                                           'Просто уйти?',
-                                           'А я останусь тут навечно?', 'Чтож... Прощай...'],
-                                     ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png'])
+                        dialog_start(fps, ['Ты выбрал пощаду?',
+                                           'Ты с таким рвением пытался уйти...'
+                                           'А теперь ты решил остаться со мной?'
+                                           'Чтож давай наслаждаться вечностью вместе.'],
+                                     ['MONIK_blush.png', 'MONIK_pity.png', 'MONIK_pity.png', 'MONIK_happy.png'])
                         turn = False
                         mercy = False
                     else:
@@ -1014,6 +1099,7 @@ def mercy_menu(start_text):
     for a in text:
         a.kill()
     timer_M = timer_check
+
 
 class Line():
     def __init__(self, x, y, line, size):
@@ -1367,6 +1453,7 @@ def third_attack(intervale, n, end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, timer, alive, gravity_force, gravity_force_up
+
     pygame.init()
     counter_pens = 0
     attack = True
@@ -1426,6 +1513,7 @@ def third_attack(intervale, n, end_time):
                 counter_pens += 1
             if seconds_passed % intervale == 0:
                 gravity_force_up = True
+                monika.replacement(load_image('MONIK_up.png'), 3, 1, 200, 0)
             seconds_passed += 1
             timer_M = 0
         hp.update(hp_counter, screen)
@@ -1506,6 +1594,7 @@ def fourth_attack(intervale, n, end_time):
                 counter_pens += 1
             if seconds_passed % intervale == 0:
                 gravity_force_up = True
+                monika.replacement(load_image('MONIK_up.png'), 3, 1, 200, 0)
             seconds_passed += 1
             timer_M = 0
         hp.update(hp_counter, screen)
@@ -1607,6 +1696,12 @@ def fifth_attack(end_time, difference, n):
 def phase_1():
     global seconds_passed, fps, mercy
     if alive:
+        your_turn('Наконец, вы можете сделать свой ход.')
+    if alive:
+        your_turn('Наконец, вы можете сделать свой ход.')
+    if alive:
+        your_turn('Наконец, вы можете сделать свой ход.')
+    if alive:
         first_attack(2, 5, 20)
     if alive:
         second_attack(1, 11, 39)
@@ -1625,7 +1720,7 @@ def phase_1():
     if alive:
         second_attack(0.5, 30, 100)
     if alive:
-        fifth_attack(120, 10, 150)
+        fifth_attack(120, 10, 50)
     if alive:
         dialog_start(fps, ['Знаешь...', 'Я тут подумала, что отпущу тебя',
                            'Только при условии...',
@@ -1639,7 +1734,7 @@ def phase_1():
     if alive:
         fourth_attack(1, 10, 145)
     if alive:
-        fifth_attack(150, 10, 300)
+        fifth_attack(150, 10, 150)
     if alive:
         second_attack(1, 30, 200)
     if alive:
@@ -1695,6 +1790,7 @@ if __name__ == '__main__':
     #   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     #   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
+
     enemies.append('Моника')
     counter = 0
     hp = Health_bar()
@@ -1715,6 +1811,7 @@ if __name__ == '__main__':
     energy_reversed = False
     playing_background = False
     confessed = False
+    animation = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
     music_1 = pygame.mixer.Sound('data\Phase1.wav')
     background_music = pygame.mixer.Channel(0)
@@ -1823,6 +1920,7 @@ if __name__ == '__main__':
             seconds_passed = 0
             alive = True
             monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
+
         clock.tick(fps)
         pygame.display.flip()
     pygame.quit()
