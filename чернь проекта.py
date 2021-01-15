@@ -205,7 +205,13 @@ class Vrag(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        global animation
+        global animation, dodge
+        if dodge:
+            if self.rect.x != 300:
+                self.rect.x += 5
+        else:
+            if self.rect.x != 200:
+                self.rect.x -= 5
         if timer_M % 5 == 0:
             if not animation:
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_main)
@@ -224,7 +230,6 @@ class Vrag(pygame.sprite.Sprite):
         self.cur_frame_animation = 0
         self.rect = self.rect.move(x, y)
         animation = True
-
 
 class Hit(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -246,7 +251,7 @@ class Hit(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        if timer_M % 5 == 0:
+        if timer_M % 10 == 0:
 
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
@@ -255,7 +260,13 @@ class Hit(pygame.sprite.Sprite):
                 self.kill()
 
 
-
+class Minigame(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        self.image = load_image('hit_eye.png')
+        super().__init__(all_spr)
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
 
 class Button():
     def __init__(self, start_x, start_y, screen, text):
@@ -403,6 +414,21 @@ class Health_bar():
         if hp >= 0:
             pygame.draw.rect(screen, 'green', (202, 632, (1.97 * hp), 27))
 
+class Slider(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        self.image = pygame.Surface((20, 180))
+        self.image.fill(pygame.Color('gray'))
+        super().__init__(all_spr)
+        self.add(platform_up)
+        self.rect = pygame.Rect(pos[0], pos[1], 50, 6)
+        self.vel = 15
+
+    def update(self):
+        global turn
+        self.rect = self.rect.move(self.vel, 0)
+        if self.rect.x >= 650:
+            self.kill()
+            turn = False
 
 def death():
     death_screen = pygame.display.set_mode((700, 800))
@@ -730,15 +756,15 @@ def hit_menu(start_text):
 
 
 def hit():
-    global turn, screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
-    turn = False
-    load_image('hit_eye', )
-    Hit(load_image('attack.png'), 4, 1, 200, 50)
+    global turn, screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies, dodge, tried
+    fon = Minigame((56, 406))
     screen.fill((0, 0, 0))
     cube.rect.x = 74120
     cube.rect.y = 74210
-    timer_check = timer_M
     locol_f = True
+    slider = Slider((56, 416))
+    timer_start = 0
+    hitted = False
     while locol_f:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -746,14 +772,19 @@ def hit():
                 running = False
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-
                 if event.key == pygame.K_SPACE:
-                    choose = False
-                    cube.rect.x = 9000
-                    cube.rect.y = 9000
-                    hit()
-
-
+                    if not mercy:
+                        dodge = True
+                        hitted = True
+                    Hit(load_image('attack.png'), 4, 1, 180, 50)
+                    slider.vel = 0
+                    turn = False
+        if timer_M >= fps:
+            if not turn:
+                timer_start += 1
+            timer_M = 0
+        if timer_start == 2:
+            locol_f = False
         screen.fill((0, 0, 0))
         all_spr.draw(screen)
         all_spr.update()
@@ -761,10 +792,15 @@ def hit():
         timer_M += 1
         clock.tick(fps)
         pygame.display.flip()
-    for a in text:
-        a.kill()
-    timer_M = timer_check
-
+    timer_M = 1
+    fon.kill()
+    slider.kill()
+    dodge = False
+    if not tried and hitted:
+        dialog_start(fps, ['Вижу тебе нравиться играть с острыми предметами...',
+                           'Будь аккуратнее в следующий раз.'],
+                     ['MONIK_surprise.png', 'MONIK_wink.png'])
+        tried = True
 
 def action_menu(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
@@ -1696,12 +1732,6 @@ def fifth_attack(end_time, difference, n):
 def phase_1():
     global seconds_passed, fps, mercy
     if alive:
-        your_turn('Наконец, вы можете сделать свой ход.')
-    if alive:
-        your_turn('Наконец, вы можете сделать свой ход.')
-    if alive:
-        your_turn('Наконец, вы можете сделать свой ход.')
-    if alive:
         first_attack(2, 5, 20)
     if alive:
         second_attack(1, 11, 39)
@@ -1711,6 +1741,7 @@ def phase_1():
                            'Однако, твои действия...',
                            'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'],
                      ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_menace.png'])
+        your_turn('Наконец, вы можете сделать свой ход')
         seconds_passed = 40
         background_music.unpause()
     if alive:
@@ -1728,7 +1759,7 @@ def phase_1():
                      ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_menace.png'])
         seconds_passed = 105
     if alive:
-        your_turn('Наконец, вы можете сделать свой ход.')
+        your_turn('Кажется, что-то намечается')
     if alive:
         third_attack(3, 15, 130)
     if alive:
@@ -1812,6 +1843,8 @@ if __name__ == '__main__':
     playing_background = False
     confessed = False
     animation = False
+    dodge = False
+    tried = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
     music_1 = pygame.mixer.Sound('data\Phase1.wav')
     background_music = pygame.mixer.Channel(0)
