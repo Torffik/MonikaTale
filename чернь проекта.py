@@ -320,18 +320,17 @@ def terminate():
 
 
 def start_screen(fps, size):
+    global debug
     fon = pygame.display.set_mode(size)
     pygame.display.set_caption('МоникаТале')
     fon.fill((0, 0, 0))
-
     fon2 = pygame.transform.scale(load_image('logo.png'), (size))
     fon.blit(fon2, (0, 0))
-
     start_button = Button(200, 550, fon, 'НАЧАТЬ')
     # developers_button = Button(200, 375, on, 'РАЗРАБОТЧИКИ')
     exit_button = Button(200, 650, fon, 'ВЫХОД')
+    debug_button = Button(15, 750, fon, 'DEBUG')
     on_button = False
-
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -340,6 +339,7 @@ def start_screen(fps, size):
                 start_button.on_it(event.pos)
                 # developers_button.on_it(event.pos)
                 exit_button.on_it(event.pos)
+                debug_button.on_it(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if start_button.clicked(event.pos):
                     beggining(size, fon)
@@ -347,9 +347,16 @@ def start_screen(fps, size):
                     return True
                 elif exit_button.clicked(event.pos):
                     return False
+                elif debug_button.clicked(event.pos):
+                    debug = not debug
+        screen.fill((0, 0, 0))
+        fon.blit(fon2, (0, 0))
+        if debug:
+            pygame.draw.circle(screen, pygame.Color('red'), (160, 750), 15)
         start_button.update()
         # developers_button.update()
         exit_button.update()
+        debug_button.update()
         pygame.display.flip()
 
 
@@ -756,7 +763,8 @@ def hit_menu(start_text):
 
 
 def hit():
-    global turn, screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies, dodge, tried
+    global turn, screen, fps, clock, all_spr, timer_M, seconds_passed, running, \
+        cube, enemies, dodge, tried, end_phase_1, mercy
     fon = Minigame((56, 406))
     screen.fill((0, 0, 0))
     cube.rect.x = 74120
@@ -776,9 +784,15 @@ def hit():
                     if not mercy:
                         dodge = True
                         hitted = True
-                    Hit(load_image('attack.png'), 4, 1, 180, 50)
-                    slider.vel = 0
-                    turn = False
+                        Hit(load_image('attack.png'), 4, 1, 180, 50)
+                        slider.vel = 0
+                        turn = False
+                    else:
+                        Hit(load_image('attack.png'), 4, 1, 180, 50)
+                        slider.vel = 0
+                        turn = False
+                        end_phase_1 = True
+                        mercy = False
         if timer_M >= fps:
             if not turn:
                 timer_start += 1
@@ -1232,7 +1246,8 @@ class Projectale_Targeted(pygame.sprite.Sprite):
                 damage_sound.set_volume(0.1)
                 damage_sound.play()
                 invisibility = True
-                hp_counter -= damage
+                if not debug:
+                    hp_counter -= damage
         if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
 
@@ -1301,7 +1316,8 @@ class Projectale(pygame.sprite.Sprite):
                 damage_sound.set_volume(0.1)
                 damage_sound.play()
                 invisibility = True
-                hp_counter -= damage
+                if not debug:
+                    hp_counter -= damage
         if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
 
@@ -1328,7 +1344,8 @@ class Pen(pygame.sprite.Sprite):
                 damage_sound.set_volume(0.1)
                 damage_sound.play()
                 invisibility = True
-                hp_counter -= damage
+                if not debug:
+                    hp_counter -= damage
         self.rect = self.rect.move(0, 75 // fps)
         if self.rect.y > 625 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
@@ -1730,17 +1747,19 @@ def fifth_attack(end_time, difference, n):
 
 
 def phase_1():
-    global seconds_passed, fps, mercy
+    global seconds_passed, fps, mercy, monika
     if alive:
         first_attack(2, 5, 20)
     if alive:
         second_attack(1, 11, 39)
     if alive:
         background_music.pause()
-        dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
-                           'Однако, твои действия...',
-                           'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'],
-                     ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_menace.png'])
+        if not debug:
+            dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
+                               'Однако, твои действия...',
+                               'Говорят, что удержать тебя со мной...', 'п р и д е т с я  с и л о й .  .  .'],
+                         ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_normal.png',
+                          'MONIK_menace.png'])
         your_turn('Наконец, вы можете сделать свой ход')
         seconds_passed = 40
         background_music.unpause()
@@ -1753,10 +1772,11 @@ def phase_1():
     if alive:
         fifth_attack(120, 10, 50)
     if alive:
-        dialog_start(fps, ['Знаешь...', 'Я тут подумала, что отпущу тебя',
-                           'Только при условии...',
-                           'Что ты переживешь следующую атаку...'],
-                     ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_menace.png'])
+        if not debug:
+            dialog_start(fps, ['Знаешь...', 'Я тут подумала, что отпущу тебя',
+                               'Только при условии...',
+                               'Что ты переживешь следующую атаку...'],
+                         ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_menace.png'])
         seconds_passed = 105
     if alive:
         your_turn('Кажется, что-то намечается')
@@ -1769,15 +1789,28 @@ def phase_1():
     if alive:
         second_attack(1, 30, 200)
     if alive:
-        dialog_start(fps, ['Хух...', 'Это даже как то утомляет',
-                           'Слушай, у меня к тебе предложение',
-                           'Давай останемся тут навечно, не завершая твой ход никогда?',
-                           'Я просто очень боюсь остаться одна...', 'Пожалуйста, сделай верный выбор...'],
-                     ['MONIK_tired.png', 'MONIK_tired.png', 'MONIK_tired.png',
-                      'MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png'])
+        if not debug:
+            dialog_start(fps, ['Хух...', 'Это даже как то утомляет',
+                               'Слушай, у меня к тебе предложение',
+                               'Давай останемся тут навечно, не завершая твой ход никогда?',
+                               'Я просто очень боюсь остаться одна...', 'Пожалуйста, сделай верный выбор...'],
+                         ['MONIK_tired.png', 'MONIK_tired.png', 'MONIK_tired.png',
+                          'MONIK_pity.png', 'MONIK_pity.png', 'MONIK_pity.png'])
         mercy = True
         while mercy:
             your_turn('Моника щадит вас...')
+    if end_phase_1:
+        monika.kill()
+        monika = Vrag(load_image('MONIK_down.png'), 1, 1, 200, 0)
+        pygame.mixer.Sound('data//enemy_hit.mp3').play()
+        pygame.display.flip()
+        dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
+                           'Убита собственным возлюбленным...',
+                           'Н  е  т.', 'Такого монстра точно не может существовать...',
+                           'А значит...', ' Единственный вариант...', 'Ты... у б и л   е г о.  .  .', 'НИКОГДА НЕ ПРОЩУ!'],
+                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
+                      'MONIK_down.png', 'MONIK_down.png'])
 
 
 if __name__ == '__main__':
@@ -1785,9 +1818,10 @@ if __name__ == '__main__':
     speech = pygame.mixer.Channel(1)
     fps = 30
     size = width, height = 700, 800
+    debug = False
+    screen = pygame.display.set_mode(size)
     running = start_screen(fps, size)
     pygame.display.set_caption('МоникаТале')
-    screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
     timer = 0
     timer_M = 0
@@ -1814,6 +1848,7 @@ if __name__ == '__main__':
     rotated = False
     turn = False
     mercy = False
+    end_phase_1 = False
     enemies = []
     actions = ['Оценить', 'Подмигнуть', 'Признаться']
     inventory = ['Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс']
@@ -1913,11 +1948,12 @@ if __name__ == '__main__':
         timer_M += 1
         if started:
             if seconds_passed == 4:
-                dialog_start(fps, ['Каждый день...', 'Я мечтала о будущем, что ждет нас.',
-                                   'Теперь... Ты просто уходишь?',
-                                   'Как ты можешь?', 'Я не позволю просто так стереть мои старания!'],
-                             ['MONIK_normal.png', 'MONIK_normal.png',
-                              'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_angry.png'])
+                if not debug:
+                    dialog_start(fps, ['Каждый день...', 'Я мечтала о будущем, что ждет нас.',
+                                       'Теперь... Ты просто уходишь?',
+                                       'Как ты можешь?', 'Я не позволю просто так стереть мои старания!'],
+                                 ['MONIK_normal.png', 'MONIK_normal.png',
+                                  'MONIK_normal.png', 'MONIK_normal.png', 'MONIK_angry.png'])
                 seconds_passed += 1
             if seconds_passed >= 7:
                 if not character_exist:
@@ -1928,8 +1964,9 @@ if __name__ == '__main__':
                     right_board = Board(400, 400, 400, 606, right)
                     character_exist = True
             if seconds_passed == 8:
-                dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
-                                   'Дамы вперёд, знаешь ли.'], ['MONIK_surprise.png', 'MONIK_wink.png'])
+                if not debug:
+                    dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
+                                       'Дамы вперёд, знаешь ли.'], ['MONIK_surprise.png', 'MONIK_wink.png'])
                 background_music.play(music_1)
                 phase_1()
         all_spr.draw(screen)
@@ -1953,7 +1990,6 @@ if __name__ == '__main__':
             seconds_passed = 0
             alive = True
             monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
-
         clock.tick(fps)
         pygame.display.flip()
     pygame.quit()
