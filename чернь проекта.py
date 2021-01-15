@@ -1753,7 +1753,7 @@ def phase_1():
     if alive:
         second_attack(1, 11, 39)
     if alive:
-        background_music.pause()
+        background_music.stop()
         if not debug:
             dialog_start(fps, ['Послушай...', 'Я не хочу причинять тебе боль',
                                'Однако, твои действия...',
@@ -1762,7 +1762,7 @@ def phase_1():
                           'MONIK_menace.png'])
         your_turn('Наконец, вы можете сделать свой ход')
         seconds_passed = 40
-        background_music.unpause()
+        background_music.play(phase_1_1_1)
     if alive:
         fifth_attack(50, 7, 50)
     if alive:
@@ -1770,6 +1770,7 @@ def phase_1():
     if alive:
         second_attack(0.5, 30, 100)
     if alive:
+        background_music.play(phase_1_1, -1)
         fifth_attack(120, 10, 50)
     if alive:
         if not debug:
@@ -1779,7 +1780,9 @@ def phase_1():
                          ['MONIK_pity.png', 'MONIK_pity.png', 'MONIK_normal.png', 'MONIK_menace.png'])
         seconds_passed = 105
     if alive:
+        background_music.play(phase_1_turn, -1)
         your_turn('Кажется, что-то намечается')
+        background_music.play(phase_1_2)
     if alive:
         third_attack(3, 15, 130)
     if alive:
@@ -1787,7 +1790,7 @@ def phase_1():
     if alive:
         fifth_attack(150, 10, 150)
     if alive:
-        second_attack(1, 30, 200)
+        second_attack(1, 30, 197)
     if alive:
         if not debug:
             dialog_start(fps, ['Хух...', 'Это даже как то утомляет',
@@ -1881,9 +1884,17 @@ if __name__ == '__main__':
     dodge = False
     tried = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
-    music_1 = pygame.mixer.Sound('data\Phase1.wav')
+    phase_1_introduction = pygame.mixer.Sound('data\Phase1_Introduction.wav')
+    phase_1_1 = pygame.mixer.Sound('data\Phase1_1.wav')
+    phase_1_2 = pygame.mixer.Sound('data\Phase1_2.wav')
+    phase_1_1_1 = pygame.mixer.Sound('data\Phase1_1_1.wav')
+    phase_1_turn = pygame.mixer.Sound('data\Phase1_1_Turn.wav')
     background_music = pygame.mixer.Channel(0)
-    music_1.set_volume(0.1)
+    phase_1_introduction.set_volume(0.1)
+    phase_1_1.set_volume(0.1)
+    phase_1_turn.set_volume(0.1)
+    phase_1_1_1.set_volume(0.1)
+    phase_1_2.set_volume(0.1)
     spawning_sound = pygame.mixer.Sound('data//spawn.wav')
     spawning_sound.set_volume(0.1)
     while running:
@@ -1967,7 +1978,7 @@ if __name__ == '__main__':
                 if not debug:
                     dialog_start(fps, ['Что? Ты думал я просто дам тебе начать первым?',
                                        'Дамы вперёд, знаешь ли.'], ['MONIK_surprise.png', 'MONIK_wink.png'])
-                background_music.play(music_1)
+                background_music.play(phase_1_introduction)
                 phase_1()
         all_spr.draw(screen)
         all_spr.update()
