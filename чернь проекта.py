@@ -226,10 +226,10 @@ class Vrag(pygame.sprite.Sprite):
     def replacement(self, sheet, columns, rows, x, y):
         global animation
         self.cut_sheet(sheet, columns, rows)
-        print(len(self.frames))
         self.cur_frame_animation = 0
         self.rect = self.rect.move(x, y)
         animation = True
+
 
 class Hit(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -267,6 +267,7 @@ class Minigame(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
+
 
 class Button():
     def __init__(self, start_x, start_y, screen, text):
@@ -421,6 +422,7 @@ class Health_bar():
         if hp >= 0:
             pygame.draw.rect(screen, 'green', (202, 632, (1.97 * hp), 27))
 
+
 class Slider(pygame.sprite.Sprite):
     def __init__(self, pos):
         self.image = pygame.Surface((20, 180))
@@ -436,6 +438,7 @@ class Slider(pygame.sprite.Sprite):
         if self.rect.x >= 650:
             self.kill()
             turn = False
+
 
 def death():
     death_screen = pygame.display.set_mode((700, 800))
@@ -815,6 +818,7 @@ def hit():
                            'Будь аккуратнее в следующий раз.'],
                      ['MONIK_surprise.png', 'MONIK_wink.png'])
         tried = True
+
 
 def action_menu(start_text):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, running, cube, enemies
@@ -1808,12 +1812,16 @@ def phase_1():
         pygame.mixer.Sound('data//enemy_hit.mp3').play()
         pygame.display.flip()
         dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
-                           'Убита собственным возлюбленным...',
-                           'Н  е  т.', 'Такого монстра точно не может существовать...',
-                           'А значит...', ' Единственный вариант...', 'Ты... у б и л   е г о.  .  .', 'НИКОГДА НЕ ПРОЩУ!'],
+                           'Убита собственным возлюбленным...'],
+                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
+        background_music.play(phase_2_introduction, -1)
+        dialog_start(fps, ['...', 'н е т.', 'Он не мог бы такого сделать...',
+                           'Не было у него сил монстра, способного уничтожить любого одним ударом.',
+                           'А значит...', 'Единственный вариант...',
+                           'Ты... у б и л   е г о.  .  .', 'НИКОГДА НЕ ПРОЩУ!'],
                      ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
-                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
-                      'MONIK_down.png', 'MONIK_down.png'])
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
+        background_music.stop()
 
 
 if __name__ == '__main__':
@@ -1859,7 +1867,6 @@ if __name__ == '__main__':
     #   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     #   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
-
     enemies.append('Моника')
     counter = 0
     hp = Health_bar()
@@ -1884,17 +1891,19 @@ if __name__ == '__main__':
     dodge = False
     tried = False
     damage_sounds = ['data//classic_hurt.wav', 'data//damaged.wav']
+    background_music = pygame.mixer.Channel(0)
     phase_1_introduction = pygame.mixer.Sound('data\Phase1_Introduction.wav')
     phase_1_1 = pygame.mixer.Sound('data\Phase1_1.wav')
     phase_1_2 = pygame.mixer.Sound('data\Phase1_2.wav')
     phase_1_1_1 = pygame.mixer.Sound('data\Phase1_1_1.wav')
     phase_1_turn = pygame.mixer.Sound('data\Phase1_1_Turn.wav')
-    background_music = pygame.mixer.Channel(0)
     phase_1_introduction.set_volume(0.1)
-    phase_1_1.set_volume(0.1)
+    phase_1_1.set_volume(0.05)
     phase_1_turn.set_volume(0.1)
-    phase_1_1_1.set_volume(0.1)
+    phase_1_1_1.set_volume(0.05)
     phase_1_2.set_volume(0.1)
+    phase_2_introduction = pygame.mixer.Sound('data//Phase2_Intro.mp3')
+    phase_2_introduction.set_volume(0.1)
     spawning_sound = pygame.mixer.Sound('data//spawn.wav')
     spawning_sound.set_volume(0.1)
     while running:
