@@ -1794,7 +1794,7 @@ def phase_1():
     if alive:
         fifth_attack(150, 10, 150)
     if alive:
-        second_attack(1, 30, 197)
+        second_attack(1, 30, 190)
     if alive:
         if not debug:
             dialog_start(fps, ['Хух...', 'Это даже как то утомляет',
@@ -1809,7 +1809,7 @@ def phase_1():
     if end_phase_1:
         monika.kill()
         monika = Vrag(load_image('MONIK_down.png'), 1, 1, 200, 0)
-        pygame.mixer.Sound('data//enemy_hit.mp3').play()
+        pygame.mixer.Sound('data//enemy_hit.wav').play()
         pygame.display.flip()
         dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
                            'Убита собственным возлюбленным...'],
@@ -1902,7 +1902,7 @@ if __name__ == '__main__':
     phase_1_turn.set_volume(0.1)
     phase_1_1_1.set_volume(0.05)
     phase_1_2.set_volume(0.1)
-    phase_2_introduction = pygame.mixer.Sound('data//Phase2_Intro.mp3')
+    phase_2_introduction = pygame.mixer.Sound('data//Phase2_Intro.wav')
     phase_2_introduction.set_volume(0.1)
     spawning_sound = pygame.mixer.Sound('data//spawn.wav')
     spawning_sound.set_volume(0.1)
