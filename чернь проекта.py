@@ -463,6 +463,7 @@ class Slider(pygame.sprite.Sprite):
             self.kill()
             turn = False
 
+
 class Time_Text(pygame.sprite.Sprite):
     def __init__(self, x, y, text, lifetime, font, size):
         super().__init__(all_spr)
@@ -475,7 +476,6 @@ class Time_Text(pygame.sprite.Sprite):
         self.rect.y = y
         self.image.set_alpha(255)
 
-
     def update(self):
         if seconds_passed >= self.deathtime:
             self.fadeaway()
@@ -484,6 +484,7 @@ class Time_Text(pygame.sprite.Sprite):
             screen.blit(self.image, self.rect)
         if self.image.get_alpha() == 0:
             self.kill()
+
     def fadeaway(self):
         if self.image.get_alpha():
             self.image.set_alpha(self.image.get_alpha() - 17)
@@ -1498,6 +1499,41 @@ class Pen(pygame.sprite.Sprite):
             self.kill()
 
 
+class Cupcake(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_spr)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+        self.finishing = False
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        if not self.finishing:
+            self.rect = self.rect.move(0, 60 // fps)
+            if pygame.sprite.spritecollideany(self, down):
+                self.rect = self.rect.move(0, -(100 // fps))
+                self.finishing = True
+        if timer_M % 10 == 0 and self.finishing:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+            if self.cur_frame == len(self.frames) - 1:
+                self.kill()
+        if not invisibility and character_exist:
+            if pygame.sprite.collide_mask(self, cube):
+                take_damage()
+
+
 def first_attack(intervale, n, end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
@@ -2089,7 +2125,7 @@ def seventh_attack(intervale, n, end_time):
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, \
         timer, alive, up_board, left_board, down_board, \
-        right_board, border, up, down, left, right
+        right_board, border, up, down, left, right, monika
     pygame.init()
     attack = True
     all_spr.remove(up_board)
@@ -2107,7 +2143,9 @@ def seventh_attack(intervale, n, end_time):
     cube.rect.x = 300
     cube.rect.y = 500
     counter_pens = 0
+    monika.kill()
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
     while attack:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -2186,6 +2224,119 @@ def seventh_attack(intervale, n, end_time):
     print(seconds_passed)
 
 
+def eight_attack(intervale, n, end_time):
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, \
+        timer, alive, up_board, left_board, down_board, \
+        right_board, border, up, down, left, right, monika
+    pygame.init()
+    attack = True
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    up_board = Board(100, 400, 600, 400, up)
+    down_board = Board(100, 700, 600, 700, down)
+    left_board = Board(100, 400, 100, 700, left)
+    right_board = Board(600, 400, 600, 706, right)
+    Platform((300, 550))
+    Platform((500, 550))
+    Platform((110, 600))
+    cube.rect.x = 300
+    cube.rect.y = 500
+    blue = True
+    counter_pens = 0
+    for i in range(33):
+        Pen(100 + i * 15, 404, 3, False)
+        Pen(100 + i * 15, 620, 4, False)
+    monika.kill()
+    natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    while attack:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    move_left = True
+                elif event.key == pygame.K_RIGHT:
+                    move_right = True
+                elif event.key == pygame.K_UP:
+                    if pygame.sprite.spritecollideany(cube, down) \
+                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                        move_up = True
+                    elif not blue:
+                        move_up = True
+                elif event.key == pygame.K_DOWN:
+                    move_down = True
+                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
+                    ctrl = True
+            elif event.type == pygame.KEYUP:
+                if event.key == 1073742048 or event.key == 1073742052:
+                    ctrl = False
+                elif event.key == pygame.K_LEFT:
+                    move_left = False
+                elif event.key == pygame.K_RIGHT:
+                    move_right = False
+                elif event.key == pygame.K_UP:
+                    if move_up:
+                        energy = True
+                    move_up = False
+                    timer = 0
+                    c = 0
+                elif event.key == pygame.K_DOWN:
+                    move_down = False
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            move_up = False
+            energy = True
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            seconds_passed += 1
+            if seconds_passed % intervale == 0 and counter_pens < n:
+                Projectale('pen.png')
+                Projectale('pen.png')
+                Cupcake(load_image('cupcake.png'), 5, 1, cube.rect.x, cube.rect.y - 300)
+                counter_pens += 1
+            timer_M = 0
+        screen.fill((0, 0, 0))
+        timer_M += 1
+        hp.update(hp_counter, screen)
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if counter_pens >= n and seconds_passed >= end_time:
+            attack = False
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    blue = False
+    for a in platform_up:
+        a.kill()
+    for a in platform_down:
+        a.kill()
+    for a in pens:
+        a.kill()
+    natsuki.kill()
+    print(seconds_passed)
+
+
 def empty_attack(end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
@@ -2255,6 +2406,7 @@ def empty_attack(end_time):
         if seconds_passed == end_time:
             attack = False
 
+
 def phase_2():
     global seconds_passed, fps, mercy, monika, all_spr, actions, KR, damage, actions, inventory, tried
     tried = True
@@ -2278,6 +2430,7 @@ def phase_2():
         seconds_passed = 30
         background_music.play(phase_2_2_2, -1)
         seventh_attack(2, 10, 50)
+        eight_attack(3, 12, 85)
 
 
 if __name__ == '__main__':
