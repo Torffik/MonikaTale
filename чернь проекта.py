@@ -1140,6 +1140,7 @@ def item_menu(start_text):
                     choose = False
                     cube.rect.x = 9000
                     cube.rect.y = 9000
+                    pygame.mixer.Sound('data//heal.wav').play()
                     if not end_phase_1:
                         monologue_start(fps, ['Вы съедаете один из кучи кексов...', 'Вы восстановили 20 ОЗ!'])
                         hp_counter += regen
@@ -1532,6 +1533,45 @@ class Cupcake(pygame.sprite.Sprite):
         if not invisibility and character_exist:
             if pygame.sprite.collide_mask(self, cube):
                 take_damage()
+
+
+class Rope(pygame.sprite.Sprite):
+    def __init__(self, y):
+        super().__init__(all_spr)
+        self.image = pygame.transform.rotate(load_image('rope.png'), 90)
+        self.rect = self.image.get_rect()
+        self.rect.y = y
+        self.rect.x = 100
+        self.warning = True
+        self.timer_start = seconds_passed
+        self.image.set_alpha(0)
+        self.alpha = 0
+        self.channel = pygame.mixer.Channel(1)
+
+    def update(self):
+        if self.warning:
+            if self.alpha < 99:
+                self.image.set_alpha(self.alpha + 3)
+                self.alpha += 3
+            else:
+                self.alpha = 255
+                self.image.set_alpha(self.alpha)
+                self.warning = False
+                lash = pygame.mixer.Sound('data//lash.wav')
+                lash.set_volume(0.1)
+                self.channel.play(lash)
+        else:
+            if seconds_passed - self.timer_start >= 2:
+                self.fade_away()
+            else:
+                if pygame.sprite.collide_mask(self, cube):
+                    take_damage()
+
+    def fade_away(self):
+        self.image.set_alpha(self.alpha - 51)
+        self.alpha -= 51
+        if self.alpha <= 0:
+            self.kill()
 
 
 def first_attack(intervale, n, end_time):
@@ -2425,12 +2465,16 @@ def phase_2():
     background_music.play(phase_2_2, -1)
     if alive:
         sixth_attack(1, 12, 28)
+    if alive:
         background_music.play(phase_2_2_1, -1)
         your_turn('Ваши грехи ломают вам спину...')
         seconds_passed = 30
         background_music.play(phase_2_2_2, -1)
-        seventh_attack(2, 10, 50)
-        eight_attack(3, 12, 85)
+        seventh_attack(2, 9, 50)
+    if alive:
+        eight_attack(3, 12, 90)
+    if alive:
+        your_turn('Ваши грехи ломают вам спину...')
 
 
 if __name__ == '__main__':
@@ -2526,8 +2570,6 @@ if __name__ == '__main__':
     phase_2_2.set_volume(0.5)
     phase_2_introduction.set_volume(0.1)
     phase_2_1_2.set_volume(0.4)
-    spawning_sound = pygame.mixer.Sound('data//spawn.wav')
-    spawning_sound.set_volume(0.1)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
