@@ -129,7 +129,7 @@ class Character(pygame.sprite.Sprite):
                     if stuck:
                         self.rect = self.rect.move(0, self.v // fps)
                     else:
-                        self.rect = self.rect.move(0, ((self.v + 120) // fps))
+                        self.rect = self.rect.move(0, ((self.v + 130) // fps))
                     if (pygame.sprite.spritecollideany(self, down)
                             or pygame.sprite.spritecollideany(self, platform_up)):
                         stuck = True
@@ -2666,12 +2666,14 @@ def ninth_attack(intervale, n, end_time):
     sayori.kill()
     print(seconds_passed)
 
+
 def tenth_attack(intervale, n, end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, \
         timer, alive, up_board, left_board, down_board, \
-        right_board, border, up, down, left, right, monika, gravity_force
+        right_board, border, up, down, left, right, \
+        monika, gravity_force, reversed_gravity, gravity_force_up, energy_reversed
     pygame.init()
     attack = True
     all_spr.remove(up_board)
@@ -2775,6 +2777,10 @@ def tenth_attack(intervale, n, end_time):
         all_spr.update()
         clock.tick(fps)
         pygame.display.flip()
+        if counter_pens == (n // 2) and not reversed_gravity:
+            reversed_gravity = True
+            gravity_force_up = True
+            pygame.mixer.Sound('data//change_gravity.wav').play()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
         if hp_counter == 0:
@@ -2889,6 +2895,7 @@ def phase_2():
     background_music.play(phase_2_1_2, -1)
     your_turn('Хорошие воспоминания стираются из памяти...')
     background_music.play(phase_2_2, -1)
+    tenth_attack(3, 10, 150)
     if alive:
         sixth_attack(2, 7, 28)
     if alive:
