@@ -413,7 +413,6 @@ def start_screen(fps, size):
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if start_button.clicked(event.pos):
                     beggining(size, fon)
-                    pygame.mixer.Sound('data//begin.wav').play()
                     return True
                 elif exit_button.clicked(event.pos):
                     return False
@@ -470,7 +469,7 @@ def beggining(size, fon):
             pygame.display.flip()
             fon.fill((0, 0, 0))
             speech.stop()
-        pygame.mixer.Sound('data//battle_start.wav').play()
+    pygame.mixer.Sound('data//battle_start.wav').play()
 
 
 class Health_bar():
@@ -1525,11 +1524,12 @@ class Projectale(pygame.sprite.Sprite):
 
 
 class Pen(pygame.sprite.Sprite):
-    def __init__(self, x, y, side, moving=True):
+    def __init__(self, x, y, side, moving=True, reflectable=False, velocity=75):
         super().__init__(all_spr, projectales)
         self.image = load_image('pen.png')
         self.rect = self.image.get_rect()
         self.moving = moving
+        self.reflect = reflectable
         self.add(pens)
         if side == 1:
             self.image = pygame.transform.rotate(self.image, 90)
@@ -1542,6 +1542,7 @@ class Pen(pygame.sprite.Sprite):
             self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = x
         self.rect.y = y
+        self.velocity = velocity
 
     def update(self):
         global seconds_passed, timer_M, fps, invisibility, character_exist
@@ -1549,7 +1550,14 @@ class Pen(pygame.sprite.Sprite):
             if pygame.sprite.collide_mask(self, cube):
                 take_damage()
         if self.moving:
-            self.rect = self.rect.move(0, 75 // fps)
+            if self.reflect:
+                self.rect = self.rect.move(self.velocity // fps, 0)
+                if pygame.sprite.spritecollideany(self, left) \
+                        or pygame.sprite.spritecollideany(self, right):
+                    self.rect = self.rect.move(-(self.velocity // 2) // fps, 0)
+                    self.velocity = -self.velocity
+            else:
+                self.rect = self.rect.move(0, self.velocity // fps)
         if self.rect.y > 700 or self.rect.x < 0 or self.rect.x > width + 200:
             self.kill()
 
@@ -1616,10 +1624,9 @@ class Rope(pygame.sprite.Sprite):
                 self.channel.play(lash)
         else:
             if seconds_passed - self.timer_start >= 1:
-                self.fade_away()
-            else:
                 if pygame.sprite.collide_mask(self, cube):
                     take_damage()
+                self.fade_away()
 
     def fade_away(self):
         self.image.set_alpha(self.alpha - 51)
@@ -2088,6 +2095,8 @@ def fifth_attack(end_time, difference, n):
 
 def phase_1():
     global seconds_passed, fps, mercy, monika, all_spr, end_phase_1
+    end_phase_1 = True
+    phase_2()
     background_music.play(phase_1_introduction)
     if alive:
         first_attack(2, 5, 20)
@@ -2311,8 +2320,6 @@ def seventh_attack(intervale, n, end_time):
     down_board = Board(100, 700, 600, 700, down)
     left_board = Board(100, 400, 100, 700, left)
     right_board = Board(600, 400, 600, 706, right)
-    cube.rect.x = 300
-    cube.rect.y = 500
     counter_pens = 0
     monika.kill()
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
@@ -2430,8 +2437,6 @@ def eight_attack(intervale, n, end_time):
     Platform((300, 550))
     Platform((500, 550))
     Platform((110, 600))
-    cube.rect.x = 300
-    cube.rect.y = 500
     blue = True
     counter_pens = 0
     for i in range(33):
@@ -2556,8 +2561,6 @@ def ninth_attack(intervale, n, end_time):
     Platform((200, 525), False)
     Platform((300, 490), False)
     Platform((500, 490), False)
-    cube.rect.x = 300
-    cube.rect.y = 560
     blue = True
     reversed_gravity = True
     pygame.mixer.Sound('data//change_gravity.wav').play()
@@ -2639,6 +2642,130 @@ def ninth_attack(intervale, n, end_time):
             if seconds_passed % intervale == 0 and counter_pens < n:
                 Projectale('pen.png', blue_s=True)
                 Rope(cube.rect.y)
+                counter_pens += 1
+            timer_M = 0
+        screen.fill((0, 0, 0))
+        timer_M += 1
+        hp.update(hp_counter, screen)
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if counter_pens >= n and seconds_passed >= end_time:
+            attack = False
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    blue = False
+    for a in platform_up:
+        a.kill()
+    for a in platform_down:
+        a.kill()
+    for a in pens:
+        a.kill()
+    sayori.kill()
+    print(seconds_passed)
+
+def tenth_attack(intervale, n, end_time):
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, \
+        timer, alive, up_board, left_board, down_board, \
+        right_board, border, up, down, left, right, monika, gravity_force
+    pygame.init()
+    attack = True
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    up_board = Board(100, 500, 600, 500, up)
+    down_board = Board(100, 700, 600, 700, down)
+    left_board = Board(100, 500, 100, 700, left)
+    right_board = Board(600, 500, 600, 706, right)
+    blue = True
+    counter_pens = 0
+    Pen(110, 620, 4, reflectable=True, velocity=-170)
+    Pen(570, 620, 4, reflectable=True, velocity=170)
+    Pen(110, 500, 4, reflectable=True, velocity=-170)
+    Pen(570, 500, 4, reflectable=True, velocity=170)
+    monika.kill()
+    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    gravity_force = True
+    while attack:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                running = False
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    move_left = True
+                elif event.key == pygame.K_RIGHT:
+                    move_right = True
+                elif event.key == pygame.K_UP:
+                    if pygame.sprite.spritecollideany(cube, down) \
+                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                        move_up = True
+                    elif not blue:
+                        move_up = True
+                elif event.key == pygame.K_DOWN:
+                    if character_exist:
+                        if pygame.sprite.spritecollideany(cube, up) \
+                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
+                            move_down = True
+                        elif not reversed_gravity:
+                            move_down = True
+                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
+                    ctrl = True
+            elif event.type == pygame.KEYUP:
+                if event.key == 1073742048 or event.key == 1073742052:
+                    ctrl = False
+                elif event.key == pygame.K_LEFT:
+                    move_left = False
+                elif event.key == pygame.K_RIGHT:
+                    move_right = False
+                elif event.key == pygame.K_UP:
+                    if move_up:
+                        energy = True
+                    move_up = False
+                    timer = 0
+                    c = 0
+                elif event.key == pygame.K_DOWN:
+                    if reversed_gravity:
+                        if move_down:
+                            energy_reversed = True
+                        move_down = False
+                        timer = 0
+                        c = 0
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            if reversed_gravity:
+                energy_reversed = True
+                move_down = False
+            else:
+                move_up = False
+                energy = True
+        if reversed_gravity:
+            if move_down:
+                timer += 1
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            seconds_passed += 1
+            if seconds_passed % intervale == 0 and counter_pens < n:
+                Rope(590)
                 counter_pens += 1
             timer_M = 0
         screen.fill((0, 0, 0))
@@ -2763,7 +2890,7 @@ def phase_2():
     your_turn('Хорошие воспоминания стираются из памяти...')
     background_music.play(phase_2_2, -1)
     if alive:
-        sixth_attack(1, 12, 28)
+        sixth_attack(2, 7, 28)
     if alive:
         background_music.play(phase_2_2_1, -1)
         your_turn('Ваши грехи ломают вам спину...')
@@ -2774,6 +2901,8 @@ def phase_2():
         eight_attack(3, 12, 90)
     if alive:
         ninth_attack(1, 20, 115)
+    if alive:
+        tenth_attack(3, 10, 150)
     if alive:
         your_turn('Ваши грехи ломают вам спину...')
 
