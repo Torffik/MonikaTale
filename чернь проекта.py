@@ -1,10 +1,55 @@
 import pygame
 import os
 import sys
-from random import randint
+from random import randint, choice
 import math
 
 pygame.init()
+
+
+def get_event():
+    global running, move_up, move_down, move_left, move_right, timer, c, energy, energy_reversed
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            running = False
+            sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                move_left = True
+            elif event.key == pygame.K_RIGHT:
+                move_right = True
+            elif event.key == pygame.K_UP:
+                if pygame.sprite.spritecollideany(cube, down) \
+                        or pygame.sprite.spritecollideany(cube, platform_up) and blue:
+                    move_up = True
+                elif not blue:
+                    move_up = True
+            elif event.key == pygame.K_DOWN:
+                if character_exist:
+                    if pygame.sprite.spritecollideany(cube, up) \
+                            or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
+                        move_down = True
+                    elif not reversed_gravity:
+                        move_down = True
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                move_left = False
+            elif event.key == pygame.K_RIGHT:
+                move_right = False
+            elif event.key == pygame.K_UP:
+                if move_up:
+                    energy = True
+                move_up = False
+                timer = 0
+                c = 0
+            elif event.key == pygame.K_DOWN:
+                if reversed_gravity:
+                    if move_down:
+                        energy_reversed = True
+                move_down = False
+                timer = 0
+                c = 0
 
 
 def load_image(name, colorkey=None):
@@ -40,7 +85,6 @@ class Platform_Bottom(pygame.sprite.Sprite):
             elif pygame.sprite.spritecollideany(self, right):
                 self.v = -self.v
             self.rect = self.rect.move(self.v, 0)
-
 
 
 class Platform(pygame.sprite.Sprite):
@@ -125,7 +169,7 @@ class Character(pygame.sprite.Sprite):
                         gravity_force_up = False
                         energy_reversed = True
                 if (move_down and (not pygame.sprite.spritecollideany(self, platform_up)
-                                 and not pygame.sprite.spritecollideany(self, down))):
+                                   and not pygame.sprite.spritecollideany(self, down))):
                     if stuck:
                         self.rect = self.rect.move(0, self.v // fps)
                     else:
@@ -204,10 +248,14 @@ class Character(pygame.sprite.Sprite):
                             self.image = self.blue
                             rotated = False
             if move_left and not pygame.sprite.spritecollideany(self, left) \
-                    and not (pygame.sprite.spritecollideany(self, platform_down) and pygame.sprite.spritecollideany(self, platform_up)):
+                    and not (
+                    pygame.sprite.spritecollideany(self, platform_down) and pygame.sprite.spritecollideany(self,
+                                                                                                           platform_up)):
                 self.rect = self.rect.move(-((self.v + 60) // fps), 0)
             if move_right and not pygame.sprite.spritecollideany(self, right) \
-                    and not (pygame.sprite.spritecollideany(self, platform_down) and pygame.sprite.spritecollideany(self, platform_up)):
+                    and not (
+                    pygame.sprite.spritecollideany(self, platform_down) and pygame.sprite.spritecollideany(self,
+                                                                                                           platform_up)):
                 self.rect = self.rect.move(((self.v + 60) // fps), 0)
             if pygame.sprite.spritecollideany(self, platform_up):
                 if not (pygame.sprite.spritecollideany(self, border)):
@@ -1208,6 +1256,8 @@ def item_menu(start_text):
                     inventory.remove('Шок. Кекс')
                     if hp_counter > 100:
                         hp_counter = 100
+                    if end_phase_1:
+                        heal_attack()
                     turn = False
                 elif event.key == pygame.K_ESCAPE:
                     choose = False
@@ -1524,9 +1574,9 @@ class Projectale(pygame.sprite.Sprite):
 
 
 class Pen(pygame.sprite.Sprite):
-    def __init__(self, x, y, side, moving=True, reflectable=False, velocity=75):
+    def __init__(self, x, y, side, moving=True, reflectable=False, velocity=75, image='pen.png'):
         super().__init__(all_spr, projectales)
-        self.image = load_image('pen.png')
+        self.image = load_image(image)
         self.rect = self.image.get_rect()
         self.moving = moving
         self.reflect = reflectable
@@ -1563,13 +1613,14 @@ class Pen(pygame.sprite.Sprite):
 
 
 class Cupcake(pygame.sprite.Sprite):
-    def __init__(self, sheet, columns, rows, x, y):
+    def __init__(self, sheet, columns, rows, x, y, velocity=60):
         super().__init__(all_spr)
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.rect.move(x, y)
+        self.v = velocity
         self.finishing = False
 
     def cut_sheet(self, sheet, columns, rows):
@@ -1583,7 +1634,7 @@ class Cupcake(pygame.sprite.Sprite):
 
     def update(self):
         if not self.finishing:
-            self.rect = self.rect.move(0, 60 // fps)
+            self.rect = self.rect.move(0, self.v // fps)
             if pygame.sprite.spritecollideany(self, down):
                 self.rect = self.rect.move(0, -(100 // fps))
                 self.finishing = True
@@ -1598,30 +1649,35 @@ class Cupcake(pygame.sprite.Sprite):
 
 
 class Rope(pygame.sprite.Sprite):
-    def __init__(self, y):
+    def __init__(self, y, x=100, wait=0, angle=0):
         super().__init__(all_spr)
-        self.image = pygame.transform.rotate(load_image('rope.png'), 90)
+        self.image = pygame.transform.rotate(load_image('rope.png'), 90 + angle)
         self.rect = self.image.get_rect()
         self.rect.y = y
-        self.rect.x = 100
+        self.rect.x = x
         self.warning = True
         self.timer_start = seconds_passed
         self.image.set_alpha(0)
         self.alpha = 0
         self.channel = pygame.mixer.Channel(1)
+        self.start_time = wait
+        self.wait_timer = 0
 
     def update(self):
         if self.warning:
             if self.alpha < 99:
                 self.image.set_alpha(self.alpha + 3)
                 self.alpha += 3
-            else:
+                self.wait_timer += 1
+            elif self.alpha >= 99 and self.wait_timer >= self.start_time:
                 self.alpha = 255
                 self.image.set_alpha(self.alpha)
                 self.warning = False
                 lash = pygame.mixer.Sound('data//lash.wav')
                 lash.set_volume(0.1)
                 self.channel.play(lash)
+            else:
+                self.wait_timer += 1
         else:
             if seconds_passed - self.timer_start >= 1:
                 if pygame.sprite.collide_mask(self, cube):
@@ -1634,6 +1690,9 @@ class Rope(pygame.sprite.Sprite):
         if self.alpha <= 0:
             self.kill()
 
+    def move(self, x, y):
+        self.rect = self.rect.move(x, y)
+
 
 def first_attack(intervale, n, end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
@@ -1643,46 +1702,7 @@ def first_attack(intervale, n, end_time):
     counter_pens = 0
     attack = True
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -1730,46 +1750,7 @@ def second_attack(intervale, n, end_time):
     counter_pens = 0
     attack = True
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -1820,46 +1801,7 @@ def third_attack(intervale, n, end_time):
     attack = True
     blue = True
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -1915,46 +1857,7 @@ def fourth_attack(intervale, n, end_time):
     attack = True
     blue = True
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2016,46 +1919,7 @@ def fifth_attack(end_time, difference, n):
         Pen(320 + a, 350 - (15 * i), 2)
         a += difference
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2170,7 +2034,7 @@ def phase_1():
                            'А значит...', 'Единственный вариант...',
                            'Ты... у б и л   е г о.  .  .',
                            'Х      е      х .    .    .', 'Для тебя этот мир ничего не значит, ведь так?'
-                           ,'Однако, для меня он единственный...', 'В любом случае я проиграю...',
+            , 'Однако, для меня он единственный...', 'В любом случае я проиграю...',
                            'Тогда...', 'Я умру, сражаясь во славу всех моих друзей!'],
                      ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
                       'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
@@ -2210,46 +2074,7 @@ def sixth_attack(intervale, n, end_time):
         Pen(100 + i * 15, 404, 3, False)
         Pen(100 + i * 15, 620, 4, False)
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2325,46 +2150,7 @@ def seventh_attack(intervale, n, end_time):
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
     monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2446,46 +2232,7 @@ def eight_attack(intervale, n, end_time):
     natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
     monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2572,51 +2319,7 @@ def ninth_attack(intervale, n, end_time):
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    if reversed_gravity:
-                        if move_down:
-                            energy_reversed = True
-                        move_down = False
-                        timer = 0
-                        c = 0
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2697,53 +2400,9 @@ def tenth_attack(intervale, n, end_time):
     monika.kill()
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
-    gravity_force = True
+    cube.rect.y = 650
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    if reversed_gravity:
-                        if move_down:
-                            energy_reversed = True
-                        move_down = False
-                        timer = 0
-                        c = 0
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2797,6 +2456,113 @@ def tenth_attack(intervale, n, end_time):
     print(seconds_passed)
 
 
+def eleventh_attack(s, n, end_time):
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, \
+        timer, alive, up_board, left_board, down_board, \
+        right_board, border, up, down, left, right, \
+        monika, gravity_force, reversed_gravity, gravity_force_up, energy_reversed
+    pygame.init()
+    attack = True
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    up_board = Board(200, 400, 400, 400, up)
+    down_board = Board(200, 600, 400, 600, down)
+    left_board = Board(200, 400, 200, 600, left)
+    right_board = Board(400, 400, 400, 606, right)
+    for i in range(8):
+        Pen(130, 400 + i * 25, 1, moving=False, image='knife.png')
+        Pen(380, 400 + i * 25, 2, moving=False, image='knife.png')
+        Pen(210 + i * 25, 330, 3, moving=False, image='knife.png')
+        Pen(210 + i * 25, 580, 4, moving=False, image='knife.png')
+    cycles = 0
+    c = s - 1
+    cycle = 0
+    speed = s
+    positions = [(50, 475, 0), (40, 400, 15), (40, 335, 30), (80, 275, 45),
+                 (150, 225, 60), (225, 200, 75), (300, 175, 90),
+                 (225, 200, 105), (150, 225, 120), (80, 275, 135), (40, 335, 150), (40, 400, 165)]
+    counter_pens = 0
+    monika.kill()
+    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+    yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    if 200 < cube.rect.x < 400:
+        pass
+    else:
+        cube.rect.x = 300
+    if 400 < cube.rect.y < 600:
+        pass
+    else:
+        cube.rect.y = 500
+    while attack:
+        get_event()
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            if reversed_gravity:
+                energy_reversed = True
+                move_down = False
+            else:
+                move_up = False
+                energy = True
+        if reversed_gravity:
+            if move_down:
+                timer += 1
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            seconds_passed += 1
+            timer_M = 0
+        if timer_M % speed == 0:
+            if cycles < c:
+                x = positions[cycle][0]
+                y = positions[cycle][1]
+                angle = positions[cycle][2]
+                Rope(y, x=x, wait=30, angle=angle % 360)
+                if cycle == len(positions) - 1:
+                    speed -= 1
+                    cycles += 1
+                    cycle = 0
+                else:
+                    cycle += 1
+        screen.fill((0, 0, 0))
+        timer_M += 1
+        hp.update(hp_counter, screen)
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if counter_pens >= n and seconds_passed >= end_time:
+            attack = False
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    blue = False
+    for a in platform_up:
+        a.kill()
+    for a in platform_down:
+        a.kill()
+    for a in pens:
+        a.kill()
+    sayori.kill()
+    yuri.kill()
+    print(seconds_passed)
+
+
 def empty_attack(end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
@@ -2805,46 +2571,7 @@ def empty_attack(end_time):
         right_board, border, up, down, left, right, energy_reversed
     attack = True
     while attack:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                running = False
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    move_right = True
-                elif event.key == pygame.K_UP:
-                    if pygame.sprite.spritecollideany(cube, down) \
-                            or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                        move_up = True
-                    elif not blue:
-                        move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-                elif event.mod == pygame.KMOD_LCTRL or event.key == 1073742052:
-                    ctrl = True
-            elif event.type == pygame.KEYUP:
-                if event.key == 1073742048 or event.key == 1073742052:
-                    ctrl = False
-                elif event.key == pygame.K_LEFT:
-                    move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    move_right = False
-                elif event.key == pygame.K_UP:
-                    if move_up:
-                        energy = True
-                    move_up = False
-                    timer = 0
-                    c = 0
-                elif event.key == pygame.K_DOWN:
-                    move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
@@ -2879,6 +2606,100 @@ def empty_attack(end_time):
             attack = False
 
 
+def heal_attack():
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, \
+        timer, alive, up_board, left_board, down_board, \
+        right_board, border, up, down, left, right, \
+        monika, gravity_force, reversed_gravity, gravity_force_up, energy_reversed
+    pygame.init()
+    attack = True
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    up_board = Board(200, 400, 400, 400, up)
+    down_board = Board(200, 600, 400, 600, down)
+    left_board = Board(200, 400, 200, 600, left)
+    right_board = Board(400, 400, 400, 606, right)
+    for i in range(8):
+        Pen(130, 400 + i * 25, 1, moving=False, image='knife.png')
+        Pen(380, 400 + i * 25, 2, moving=False, image='knife.png')
+        Pen(210 + i * 25, 330, 3, moving=False, image='knife.png')
+        Pen(210 + i * 25, 580, 4, moving=False, image='knife.png')
+    positions = [(50, 475, 0), (40, 400, 15), (40, 335, 30), (80, 275, 45),
+                 (150, 225, 60), (225, 200, 75), (300, 175, 90),
+                 (225, 200, 105), (150, 225, 120), (80, 275, 135), (40, 335, 150), (40, 400, 165)]
+    counter_pens = 0
+    monika.kill()
+    yuri = Vrag(load_image('YRR.png'), 5, 2, 300, 0)
+    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    if 200 < cube.rect.x < 400:
+        pass
+    else:
+        cube.rect.x = 300
+    if 400 < cube.rect.y < 600:
+        pass
+    else:
+        cube.rect.y = 500
+    while attack:
+        get_event()
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            if reversed_gravity:
+                energy_reversed = True
+                move_down = False
+            else:
+                move_up = False
+                energy = True
+        if reversed_gravity:
+            if move_down:
+                timer += 1
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            if counter_pens < 15:
+                Cupcake(load_image('cupcake.png'), 5, 1, choice([220, 320]), cube.rect.y - 300, velocity=150)
+            counter_pens += 1
+            timer_M = 0
+        screen.fill((0, 0, 0))
+        timer_M += 1
+        hp.update(hp_counter, screen)
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if counter_pens >= 20:
+            attack = False
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    blue = False
+    for a in platform_up:
+        a.kill()
+    for a in platform_down:
+        a.kill()
+    for a in pens:
+        a.kill()
+    yuri.kill()
+    natsuki.kill()
+    your_turn('...')
+    print(seconds_passed)
+
+
 def phase_2():
     global seconds_passed, fps, mercy, monika, all_spr, actions, KR, damage, actions, inventory, tried
     tried = True
@@ -2895,7 +2716,7 @@ def phase_2():
     background_music.play(phase_2_1_2, -1)
     your_turn('Хорошие воспоминания стираются из памяти...')
     background_music.play(phase_2_2, -1)
-    tenth_attack(3, 10, 150)
+    eleventh_attack(10, 10, 150)
     if alive:
         sixth_attack(2, 7, 28)
     if alive:
@@ -3009,53 +2830,7 @@ if __name__ == '__main__':
     phase_2_introduction.set_volume(0.1)
     phase_2_1_2.set_volume(0.4)
     while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    if character_exist:
-                        move_left = True
-                elif event.key == pygame.K_RIGHT:
-                    if character_exist:
-                        move_right = True
-                elif event.key == pygame.K_UP:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, down) \
-                                or pygame.sprite.spritecollideany(cube, platform_up) and blue:
-                            move_up = True
-                    elif not blue:
-                        if character_exist:
-                            move_up = True
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if pygame.sprite.spritecollideany(cube, up) \
-                                or pygame.sprite.spritecollideany(cube, platform_down) and reversed_gravity:
-                            move_down = True
-                        elif not reversed_gravity:
-                            move_down = True
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
-                    if character_exist:
-                        move_left = False
-                elif event.key == pygame.K_RIGHT:
-                    if character_exist:
-                        move_right = False
-                elif event.key == pygame.K_UP:
-                    if character_exist:
-                        if move_up:
-                            energy = True
-                        move_up = False
-                        timer = 0
-                        c = 0
-                elif event.key == pygame.K_DOWN:
-                    if character_exist:
-                        if reversed_gravity:
-                            if move_down:
-                                energy_reversed = True
-                            timer = 0
-                            c = 0
-                        move_down = False
+        get_event()
         screen.fill((0, 0, 0))
         if invisibility:
             invisibility_timer += 1
