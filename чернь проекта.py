@@ -973,6 +973,7 @@ def hit():
                                 slider.vel = 0
                                 turn = False
                             else:
+                                background_music.stop()
                                 slider.vel = 0
                                 hitted = True
                                 Hit(load_image('attack.png'), 4, 1, 180, 50)
@@ -1982,6 +1983,8 @@ def fifth_attack(end_time, difference, n):
 def phase_1():
     global seconds_passed, fps, mercy, monika, all_spr, end_phase_1
     background_music.play(phase_1_introduction)
+    end_phase_1 = True
+    phase_2()
     if alive:
         first_attack(2, 5, 20)
     if alive:
@@ -2168,7 +2171,7 @@ def seventh_attack(intervale, n, end_time):
     counter_pens = 0
     monika.kill()
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     while attack:
         get_event()
         screen.fill((0, 0, 0))
@@ -2250,7 +2253,7 @@ def eight_attack(intervale, n, end_time):
         Pen(100 + i * 15, 620, 4, False)
     monika.kill()
     natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     while attack:
         get_event()
         screen.fill((0, 0, 0))
@@ -2337,7 +2340,7 @@ def ninth_attack(intervale, n, end_time):
         Pen(100 + i * 15, 620, 4, False)
     monika.kill()
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     while attack:
         get_event()
         screen.fill((0, 0, 0))
@@ -2420,7 +2423,7 @@ def tenth_attack(intervale, n, end_time):
     Pen(570, 500, 4, reflectable=True, velocity=170)
     monika.kill()
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     cube.rect.y = 650
     while attack:
         get_event()
@@ -2514,7 +2517,7 @@ def eleventh_attack(s, end_time):
     monika.kill()
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     if 200 < cube.rect.x < 400:
         pass
     else:
@@ -2600,7 +2603,7 @@ def twelfth_attack(intervale, n, end_time):
     i = -1
     monika.kill()
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     while attack:
         get_event()
         screen.fill((0, 0, 0))
@@ -2701,7 +2704,7 @@ def final_attack():
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
     natsuki = Vrag(load_image('NAT.png'), 5, 2, 400, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     if 200 < cube.rect.x < 400:
         pass
     else:
@@ -2853,7 +2856,7 @@ def heal_attack():
     monika.kill()
     yuri = Vrag(load_image('YRR.png'), 5, 2, 300, 0)
     natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     if 200 < cube.rect.x < 400:
         pass
     else:
@@ -2925,7 +2928,7 @@ def phase_2():
         inventory.append('Шок. Кекс')
     seconds_passed = 0
     monika.kill()
-    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     background_music.play(phase_2_1)
     empty_attack(6)
     background_music.play(phase_2_1_2, -1)
