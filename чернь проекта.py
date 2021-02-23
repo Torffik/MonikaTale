@@ -3,6 +3,8 @@ import os
 import sys
 from random import randint, choice
 import math
+import shutil
+
 
 pygame.init()
 
@@ -168,18 +170,18 @@ class Character(pygame.sprite.Sprite):
                     if gravity_force_up:
                         gravity_force_up = False
                         energy_reversed = True
-                if (move_down and (not pygame.sprite.spritecollideany(self, platform_up)
-                                   and not pygame.sprite.spritecollideany(self, down))):
+                if move_down and not pygame.sprite.spritecollideany(self, down):
                     if stuck:
                         self.rect = self.rect.move(0, self.v // fps)
                     else:
                         self.rect = self.rect.move(0, ((self.v + 130) // fps))
-                    if (pygame.sprite.spritecollideany(self, down)
-                            or pygame.sprite.spritecollideany(self, platform_up)):
+                    if pygame.sprite.spritecollideany(self, down):
                         stuck = True
                     else:
                         stuck = False
             else:
+                if not gravity_force_up:
+                    rotated = False
                 if not pygame.sprite.spritecollideany(self, down):
                     if not pygame.sprite.spritecollideany(self, platform_up):
                         if gravity_force:
@@ -203,14 +205,12 @@ class Character(pygame.sprite.Sprite):
                     if gravity_force:
                         gravity_force = False
                         energy = True
-                if (move_up and (not pygame.sprite.spritecollideany(self, platform_down)
-                                 and not pygame.sprite.spritecollideany(self, up))):
+                if move_up and not pygame.sprite.spritecollideany(self, up):
                     if stuck:
                         self.rect = self.rect.move(0, -((self.v) // fps))
                     else:
                         self.rect = self.rect.move(0, -((self.v + (100)) // fps))
-                    if (pygame.sprite.spritecollideany(self, up)
-                            or pygame.sprite.spritecollideany(self, platform_down)):
+                    if pygame.sprite.spritecollideany(self, up):
                         stuck = True
                     else:
                         stuck = False
@@ -265,6 +265,8 @@ class Character(pygame.sprite.Sprite):
                                 or (v > 0 and not pygame.sprite.spritecollideany(self, right)):
                             self.rect = self.rect.move(v, 0)
         else:
+            if rotated:
+                rotated = False
             self.image = self.red
             if move_up and not pygame.sprite.spritecollideany(self, up):
                 self.rect = self.rect.move(0, -((self.v + 60) // fps))
@@ -406,7 +408,7 @@ class Button():
             pygame.draw.rect(self.screen, 'white', (self.start_x - 10, self.start_y - 25, 200, 50), 3)
 
 
-def wait(time, black_screen=False):
+def wait(time, black_screen=False, white=False):
     global screen, fps, clock, all_spr, timer_M, seconds_passed, \
         move_left, move_right, move_up, move_down, running
     timer = 0
@@ -426,6 +428,8 @@ def wait(time, black_screen=False):
         timer += 1
         all_spr.update()
         all_spr.draw(screen)
+        if white:
+            screen.fill((255, 255, 255))
         if black_screen:
             screen.fill((0, 0, 0))
         clock.tick(fps)
@@ -460,7 +464,7 @@ def start_screen(fps, size):
                 debug_button.on_it(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if start_button.clicked(event.pos):
-                    beggining(size, fon)
+                    beggining(fon)
                     return True
                 elif exit_button.clicked(event.pos):
                     return False
@@ -477,12 +481,13 @@ def start_screen(fps, size):
         pygame.display.flip()
 
 
-def beggining(size, fon):
+def beggining(fon, text=None):
     global fps
     fon.fill((0, 0, 0))
     fort = pygame.font.Font('data//font.ttf', 25)
-    text = ['*Вы оказываетесь в пустой комнате с девушкой...', '*Это Моника.', '*Странный свет заполняет комнату...',
-            '*Вы наполнены.   .   .   ж а ж д о й   к р о в и']
+    if not text:
+        text = ['*Вы оказываетесь в пустой комнате с девушкой...', '*Это Моника.', '*Странный свет заполняет комнату...',
+                '*Вы наполнены.   .   .   ж а ж д о й   к р о в и']
     for i in range(len(text)):
         main_lines = text[i]
         line = ''
@@ -621,7 +626,7 @@ def death():
 
 
 def dialog_start(fps, text, faces):
-    global dialogue, screen, speech_sound, move_left, move_right, move_up, move_down
+    global dialogue, screen, speech_sound, move_left, move_right, move_up, move_down, timer_M
     move_left = False
     move_down = False
     move_up = False
@@ -629,7 +634,8 @@ def dialog_start(fps, text, faces):
     dialogue = True
     fort = pygame.font.Font('data//font.ttf', 15)
     for i in range(len(text)):
-        monika.image = load_image(faces[i])
+        if not end_phase_1:
+            monika.image = load_image(faces[i])
         main_lines = text[i]
         a = -100
         if len(main_lines) >= 40:
@@ -675,6 +681,8 @@ def dialog_start(fps, text, faces):
             dia_rect.y = 50
             dia_rect.x = 400
             screen.blit(dia_c, dia_rect)
+            if end_phase_1:
+                timer_M += 1
             all_spr.draw(screen)
             all_spr.update()
             next = False
@@ -959,10 +967,15 @@ def hit():
                                 end_phase_1 = True
                                 mercy = False
                         else:
-                            hitted = True
-                            Hit(load_image('attack.png'), 4, 1, 180, 50)
-                            slider.vel = 0
-                            turn = False
+                            if not end_phase_2:
+                                hitted = True
+                                Hit(load_image('attack.png'), 4, 1, 180, 50)
+                                slider.vel = 0
+                                turn = False
+                            else:
+                                slider.vel = 0
+                                hitted = True
+                                Hit(load_image('attack.png'), 4, 1, 180, 50)
         if timer_M >= fps:
             if not turn:
                 timer_start += 1
@@ -981,12 +994,21 @@ def hit():
     slider.kill()
     dodge = False
     if end_phase_1 and hitted:
-        Time_Text(300, 100, '0', 1, 'data//hachicro.ttf', 52)
+        Time_Text(300, 100, 'ErrOr', 1, 'data//hachicro.ttf', 52)
         pygame.mixer.Sound('data//hit.wav').play()
     if not tried and hitted and not end_phase_1:
         dialog_start(fps, ['Вижу тебе нравиться играть с острыми предметами...',
                            'Будь аккуратнее в следующий раз.'],
                      ['MONIK_surprise.png', 'MONIK_wink.png'])
+    if hitted and end_phase_2:
+        for sprite in all_spr:
+            sprite.kill()
+            pygame.mixer.Sound('data//enemy_hit.wav').play()
+            screen.fill((0, 0, 0))
+            beggining(screen, ['И это всё?', 'Вот так просто...',
+                               'Чтож... Ты победил...', 'Теперь, прощай...',
+                               'До следующего запуска. . .'])
+            pygame.quit()
         tried = True
 
 
@@ -1240,7 +1262,7 @@ def item_menu(start_text):
                     else:
                         if eaten_counter > 5:
                             regen = 30 - (eaten_counter * 6)
-                            if (hp_counter - regen) > 0:
+                            if (hp_counter + regen) > 0:
                                 monologue_start(fps, ['Вы съедаете один из кучи кексов...',
                                                       'Что-то не так!', f'Вы потеряли {-regen} ОЗ!'])
                                 hp_counter += regen
@@ -1959,8 +1981,6 @@ def fifth_attack(end_time, difference, n):
 
 def phase_1():
     global seconds_passed, fps, mercy, monika, all_spr, end_phase_1
-    end_phase_1 = True
-    phase_2()
     background_music.play(phase_1_introduction)
     if alive:
         first_attack(2, 5, 20)
@@ -2016,7 +2036,7 @@ def phase_1():
         mercy = True
         while mercy:
             your_turn('Моника щадит вас...')
-    if end_phase_1:
+    if alive and end_phase_1:
         Time_Text(150, 100, '9999', 1, 'data//hachicro.ttf', 64)
         monika.kill()
         monika = Vrag(load_image('MONIK_hurt.png'), 1, 1, 200, 0)
@@ -2222,7 +2242,7 @@ def eight_attack(intervale, n, end_time):
     right_board = Board(600, 400, 600, 706, right)
     Platform((300, 550))
     Platform((500, 550))
-    Platform((110, 600))
+    Platform((110, 605))
     blue = True
     counter_pens = 0
     for i in range(33):
@@ -2360,6 +2380,7 @@ def ninth_attack(intervale, n, end_time):
             attack = False
             alive = False
     blue = False
+    reversed_gravity = False
     for a in platform_up:
         a.kill()
     for a in platform_down:
@@ -2446,6 +2467,7 @@ def tenth_attack(intervale, n, end_time):
             attack = False
             alive = False
     blue = False
+    reversed_gravity = False
     for a in platform_up:
         a.kill()
     for a in platform_down:
@@ -2456,7 +2478,7 @@ def tenth_attack(intervale, n, end_time):
     print(seconds_passed)
 
 
-def eleventh_attack(s, n, end_time):
+def eleventh_attack(s, end_time):
     global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
         hp_counter, running, move_left, move_right, move_up, \
         move_down, energy, blue, invisibility, invisibility_timer, \
@@ -2489,7 +2511,6 @@ def eleventh_attack(s, n, end_time):
     positions = [(50, 475, 0), (40, 400, 15), (40, 335, 30), (80, 275, 45),
                  (150, 225, 60), (225, 200, 75), (300, 175, 90),
                  (225, 200, 105), (150, 225, 120), (80, 275, 135), (40, 335, 150), (40, 400, 165)]
-    counter_pens = 0
     monika.kill()
     sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
@@ -2546,7 +2567,7 @@ def eleventh_attack(s, n, end_time):
         all_spr.update()
         clock.tick(fps)
         pygame.display.flip()
-        if counter_pens >= n and seconds_passed >= end_time:
+        if seconds_passed >= end_time:
             attack = False
         if hp_counter == 0:
             attack = False
@@ -2560,6 +2581,199 @@ def eleventh_attack(s, n, end_time):
         a.kill()
     sayori.kill()
     yuri.kill()
+    print(seconds_passed)
+
+
+def twelfth_attack(intervale, n, end_time):
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, \
+        timer, alive, energy_reversed, gravity_force_up, monika
+    pygame.init()
+    counter_pens = 0
+    Platform((450, 625))
+    Platform((300, 550))
+    Platform((220, 475))
+    attack = True
+    blue = True
+    time_started = seconds_passed
+    i = -1
+    monika.kill()
+    yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    while attack:
+        get_event()
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            if reversed_gravity:
+                energy_reversed = True
+                move_down = False
+            else:
+                move_up = False
+                energy = True
+        if reversed_gravity:
+            if move_down:
+                timer += 1
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            if seconds_passed % intervale == 0 and counter_pens < n:
+                Projectale_Targeted('pen.png', cube)
+                Projectale_Targeted('pen.png', cube)
+                Projectale_Targeted('pen.png', cube)
+                Projectale_Targeted('pen.png', cube)
+                Projectale_Targeted('pen.png', cube)
+                Projectale_Targeted('pen.png', cube)
+                counter_pens += 1
+            if seconds_passed - time_started == 1:
+                gravity_force_up = True
+            seconds_passed += 1
+            timer_M = 0
+        if seconds_passed - time_started >= 3:
+            if timer_M % 10 == 0:
+                if i < 0:
+                    i = 0
+                elif i < 20:
+                    Pen(100 + i * 25, 640, 4, moving=False, image='knife.png')
+                    i += 1
+        hp.update(hp_counter, screen)
+        if counter_pens >= n and seconds_passed >= end_time:
+            attack = False
+        timer_M += 1
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    print(seconds_passed)
+    yuri.kill()
+    for a in platform_up:
+        a.kill()
+    for a in platform_down:
+        a.kill()
+    for a in pens:
+        a.kill()
+
+
+def final_attack():
+    global attack, screen, fps, clock, all_spr, timer_M, seconds_passed, hp, \
+        hp_counter, running, move_left, move_right, move_up, \
+        move_down, energy, blue, invisibility, invisibility_timer, \
+        timer, alive, up_board, left_board, down_board, \
+        right_board, border, up, down, left, right, \
+        monika, gravity_force, reversed_gravity, gravity_force_up, energy_reversed
+    pygame.init()
+    attack = True
+    all_spr.remove(up_board)
+    all_spr.remove(down_board)
+    all_spr.remove(left_board)
+    all_spr.remove(right_board)
+    up.remove(up_board)
+    down.remove(down_board)
+    left.remove(left_board)
+    right.remove(right_board)
+    up_board = Board(200, 400, 400, 400, up)
+    down_board = Board(200, 600, 400, 600, down)
+    left_board = Board(200, 400, 200, 600, left)
+    right_board = Board(400, 400, 400, 606, right)
+    for i in range(8):
+        Pen(130, 400 + i * 25, 1, moving=False, image='knife.png')
+        Pen(380, 400 + i * 25, 2, moving=False, image='knife.png')
+        Pen(210 + i * 25, 330, 3, moving=False, image='knife.png')
+        Pen(210 + i * 25, 580, 4, moving=False, image='knife.png')
+    cycles = 0
+    c = 15
+    cycle = 0
+    speed = 5
+    positions = [(50, 475, 0), (40, 400, 15), (40, 335, 30), (80, 275, 45),
+                 (150, 225, 60), (225, 200, 75), (300, 175, 90),
+                 (225, 200, 105), (150, 225, 120), (80, 275, 135), (40, 335, 150), (40, 400, 165)]
+    monika.kill()
+    sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
+    yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
+    natsuki = Vrag(load_image('NAT.png'), 5, 2, 400, 0)
+    monika = Vrag(load_image('MONIKA.jpg'), 5, 4, 200, 0)
+    if 200 < cube.rect.x < 400:
+        pass
+    else:
+        cube.rect.x = 300
+    if 400 < cube.rect.y < 600:
+        pass
+    else:
+        cube.rect.y = 500
+    while attack:
+        get_event()
+        screen.fill((0, 0, 0))
+        if invisibility:
+            invisibility_timer += 1
+        if invisibility_timer == fps * 3:
+            invisibility = False
+            invisibility_timer = 0
+        if timer == fps:
+            timer = 0
+            if reversed_gravity:
+                energy_reversed = True
+                move_down = False
+            else:
+                move_up = False
+                energy = True
+        if reversed_gravity:
+            if move_down:
+                timer += 1
+        if move_up:
+            if blue:
+                timer += 1
+        if timer_M >= fps:
+            Projectale_Targeted('pen.png', cube)
+            Projectale_Targeted('pen.png', cube)
+            Projectale_Targeted('pen.png', cube)
+            Cupcake(load_image('cupcake.png'), 5, 1, choice([220, 320]), cube.rect.y - 300, velocity=200)
+            seconds_passed += 1
+            timer_M = 0
+        if speed == 0 or timer_M % speed == 0:
+            if cycles < c:
+                x = positions[cycle][0]
+                y = positions[cycle][1]
+                angle = positions[cycle][2]
+                Rope(y, x=x, wait=30, angle=angle % 360)
+                if cycle == len(positions) - 1:
+                    speed -= 1
+                    cycles += 1
+                    cycle = 0
+                else:
+                    cycle += 1
+        screen.fill((0, 0, 0))
+        timer_M += 1
+        hp.update(hp_counter, screen)
+        all_spr.draw(screen)
+        all_spr.update()
+        clock.tick(fps)
+        pygame.display.flip()
+        if seconds_passed >= 290:
+            wait(3, white=True)
+            attack = False
+        if hp_counter == 0:
+            attack = False
+            alive = False
+    blue = False
+    for a in platform_up:
+        a.kill()
+    for a in platform_down:
+        a.kill()
+    for a in pens:
+        a.kill()
+    sayori.kill()
+    yuri.kill()
+    natsuki.kill()
     print(seconds_passed)
 
 
@@ -2701,7 +2915,8 @@ def heal_attack():
 
 
 def phase_2():
-    global seconds_passed, fps, mercy, monika, all_spr, actions, KR, damage, actions, inventory, tried
+    global seconds_passed, fps, mercy, monika, all_spr, actions, \
+        KR, damage, actions, inventory, tried, end_phase_2
     tried = True
     damage = 1
     KR = True
@@ -2716,7 +2931,6 @@ def phase_2():
     background_music.play(phase_2_1_2, -1)
     your_turn('Хорошие воспоминания стираются из памяти...')
     background_music.play(phase_2_2, -1)
-    eleventh_attack(10, 10, 150)
     if alive:
         sixth_attack(2, 7, 28)
     if alive:
@@ -2726,13 +2940,27 @@ def phase_2():
         background_music.play(phase_2_2_2, -1)
         seventh_attack(2, 9, 50)
     if alive:
-        eight_attack(3, 12, 90)
+        twelfth_attack(1, 20, 75)
     if alive:
-        ninth_attack(1, 20, 115)
+        eight_attack(3, 12, 115)
     if alive:
-        tenth_attack(3, 10, 150)
+        ninth_attack(2, 20, 143)
     if alive:
-        your_turn('Ваши грехи ломают вам спину...')
+        tenth_attack(3, 9, 177)
+    if alive:
+        background_music.play(phase_2_2_3, -1)
+        your_turn('Как.')
+        background_music.play(phase_2_2_4, -1)
+        dialog_start(fps, ['Знаешь...', 'Я искренне надеюсь, что ты понимаешь...',
+                           'Ты заслужил    э  т  о...'], [])
+        eleventh_attack(8, 205)
+        background_music.play(phase_2_2_5, -1)
+        seventh_attack(1, 20, 230)
+        tenth_attack(1, 28, 265)
+        final_attack()
+        background_music.play(phase_2_2_6, -1)
+        end_phase_2 = True
+        your_turn('Это конец.')
 
 
 if __name__ == '__main__':
@@ -2771,13 +2999,11 @@ if __name__ == '__main__':
     turn = False
     mercy = False
     KR = False
+    end_phase_2 = False
     end_phase_1 = False
     enemies = []
     actions = ['Оценить', 'Подмигнуть', 'Признаться']
     inventory = ['Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс']
-    #    natsuki = Vrag(load_image('NAT.png'), 5, 2, 100, 0)
-    #   sayori = Vrag(load_image('SAY.png'), 5, 2, 300, 0)
-    #   yuri = Vrag(load_image('YRR.png'), 5, 2, 150, 0)
     monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
     enemies.append('Моника')
     counter = 0
@@ -2823,6 +3049,14 @@ if __name__ == '__main__':
     phase_2_2_2 = pygame.mixer.Sound('data//Phase2_2_2.wav')
     phase_2_1 = pygame.mixer.Sound('data//Phase2_1.wav')
     phase_2_2_1 = pygame.mixer.Sound('data//Phase2_2_1.wav')
+    phase_2_2_3 = pygame.mixer.Sound('data//Phase2_2_3.wav')
+    phase_2_2_3.set_volume(0.5)
+    phase_2_2_4 = pygame.mixer.Sound('data//Phase2_2_4.wav')
+    phase_2_2_4.set_volume(0.5)
+    phase_2_2_5 = pygame.mixer.Sound('data//Phase2_2_5.wav')
+    phase_2_2_5.set_volume(0.5)
+    phase_2_2_6 = pygame.mixer.Sound('data//Phase2_2_6.wav')
+    phase_2_2_6.set_volume(0.5)
     phase_2_2_1.set_volume(0.5)
     phase_2_1.set_volume(0.1)
     phase_2_2_2.set_volume(0.5)
@@ -2929,10 +3163,43 @@ if __name__ == '__main__':
             projectales.empty()
             characters.empty()
             running = death()
-            character_exist = False
+            invisibility = False
+            invisibility_timer = 0
+            eaten_counter = 0
             hp_counter = 100
+            damage = 10
+            energy = False
             seconds_passed = 0
+            started = False
+            character_exist = False
+            dialogue = False
+            pen_counter = 17
+            attack = False
             alive = True
+            gravity_force = False
+            gravity_force_up = False
+            energy_reversed = False
+            reversed_gravity = False
+            playing_background = False
+            confessed = False
+            animation = False
+            dodge = False
+            tried = False
+            ctrl = False
+            move_up = False
+            move_left = False
+            move_right = False
+            move_down = False
+            stuck = False
+            blue = False
+            rotated = False
+            turn = False
+            mercy = False
+            KR = False
+            end_phase_2 = False
+            end_phase_1 = False
+            actions = ['Оценить', 'Подмигнуть', 'Признаться']
+            inventory = ['Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс', 'Шок. Кекс']
             monika = Vrag(load_image('MONIK_2.png'), 5, 2, 200, 0)
         clock.tick(fps)
         pygame.display.flip()
