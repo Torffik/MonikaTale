@@ -638,7 +638,9 @@ def dialog_start(fps, text, faces, menacing=False):
               'Unlimited.', 'CmepTb',
               'Say Goodbye', 'Cheater.', 'DETERMINATION.', '736d532',
               'O W U B K A.', 'YoU...', 'M̶̲̋O̷͕͑N̶͉̓I̷̞͑K̶̪̃A̷̜̎',
-              'ErRoR', 'Just Monika.', 'Ympu.', 'I H A T E Y O U']
+              'ErRoR', 'Just Monika.', 'Ympu.', 'I H A T E Y O U',
+              'You Monster', 'everyone...', 'help me.', 'mercy...',
+              'Sorry...', 'you already dead...', 'how...']
     last = ''
     move_left = False
     move_down = False
@@ -696,11 +698,11 @@ def dialog_start(fps, text, faces, menacing=False):
             dia_rect.y = 50
             dia_rect.x = 400
             screen.blit(dia_c, dia_rect)
-            if menacing and timer_M == fps:
+            if menacing and timer_M == fps // 3:
                 now = choice(menace)
                 while now == last:
                     now = choice(menace)
-                Time_Text(randint(100, 200), randint(500, 600), now, 1, 'data//hachicro.ttf', 48)
+                Time_Text(randint(10, 150), randint(300, 600), now, 2, 'data//hachicro.ttf', 40)
                 timer_M = 0
                 seconds_passed += 1
                 last = now
@@ -2009,35 +2011,6 @@ def fifth_attack(end_time, difference, n):
 
 def phase_1():
     global seconds_passed, fps, mercy, monika, all_spr, end_phase_1
-    end_phase_1 = True
-    if alive and end_phase_1:
-        Time_Text(150, 100, '9999', 1, 'data//hachicro.ttf', 64)
-        monika.kill()
-        monika = Vrag(load_image('MONIK_hurt.png'), 1, 1, 200, 0)
-        pygame.mixer.Sound('data//hit.wav').play()
-        pygame.display.flip()
-        wait(1, True)
-        monika.kill()
-        monika = Vrag(load_image('MONIK_down.png'), 1, 1, 200, 0)
-        dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
-                           'Убита собственным возлюбленным...'],
-                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
-        background_music.play(phase_2_introduction, -1)
-        dialog_start(fps, ['...', 'н е т.', 'Он не мог бы такого сделать...',
-                           'Не было у него сил монстра, способного уничтожить любого одним ударом.',
-                           'А значит...', 'Единственный вариант...',
-                           'Ты... у б и л   е г о.  .  .',
-                           'Х      е      х .    .    .', 'Для тебя этот мир ничего не значит, ведь так?'
-            , 'Однако, для меня он единственный...', 'В любом случае я проиграю...',
-                           'Тогда...', 'Я умру, сражаясь во славу всех моих друзей!'],
-                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
-                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
-                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'],
-                     menacing=True)
-        pygame.mixer.Sound('data//glitch.wav').play()
-        wait(5, white=True)
-        background_music.stop()
-        phase_2()
     background_music.play(phase_1_introduction)
     if alive:
         first_attack(2, 5, 20)
@@ -2119,6 +2092,8 @@ def phase_1():
                      menacing=True)
         pygame.mixer.Sound('data//glitch.wav').play()
         wait(5, white=True)
+        for _ in range(200):
+            all_spr.update()
         background_music.stop()
         phase_2()
 
