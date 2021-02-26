@@ -534,7 +534,10 @@ class Health_bar():
     def update(self, hp, screen):
         pygame.init()
         fort = pygame.font.Font('data//font.ttf', 32)
-        hp_c = fort.render(f'{hp}/100', True, (255, 255, 255))
+        if KR:
+            hp_c = fort.render(f'{hp}/100   KR', True, (255, 255, 255))
+        else:
+            hp_c = fort.render(f'{hp}/100', True, (255, 255, 255))
         hp_rect = hp_c.get_rect()
         hp_rect.y = 740
         hp_rect.x = 420
@@ -625,13 +628,22 @@ def death():
         pygame.display.flip()
 
 
-def dialog_start(fps, text, faces):
-    global dialogue, screen, speech_sound, move_left, move_right, move_up, move_down, timer_M
+def dialog_start(fps, text, faces, menacing=False):
+    global dialogue, screen, speech_sound, \
+        move_left, move_right, move_up, move_down, timer_M, seconds_passed
+    menace = ['r u n.', 'Save yourself.', 'Power.',
+              'Unlimited.', 'CmepTb',
+              'Say Goodbye', 'Cheater.', 'DETERMINATION.', '736d532',
+              'O W U B K A.', 'YoU...', 'M̶̲̋O̷͕͑N̶͉̓I̷̞͑K̶̪̃A̷̜̎',
+              'ErRoR', 'Just Monika.', 'Ympu.', 'I H A T E Y O U']
+    last = ''
     move_left = False
     move_down = False
     move_up = False
     move_right = False
     dialogue = True
+    start_time = seconds_passed
+    start_timer = timer_M
     fort = pygame.font.Font('data//font.ttf', 15)
     for i in range(len(text)):
         if not end_phase_1:
@@ -681,6 +693,14 @@ def dialog_start(fps, text, faces):
             dia_rect.y = 50
             dia_rect.x = 400
             screen.blit(dia_c, dia_rect)
+            if menacing and timer_M == fps:
+                now = choice(menace)
+                while now == last:
+                    now = choice(menace)
+                Time_Text(randint(100, 200), randint(500, 600), now, 1, 'data//hachicro.ttf', 48)
+                timer_M = 0
+                seconds_passed += 1
+                last = now
             if end_phase_1:
                 timer_M += 1
             all_spr.draw(screen)
@@ -695,6 +715,8 @@ def dialog_start(fps, text, faces):
             screen.fill((0, 0, 0))
             speech.stop()
     dialogue = False
+    timer_M = start_timer
+    seconds_passed = start_time
 
 
 def monologue_start(fps, text):
@@ -976,6 +998,7 @@ def hit():
                                 background_music.stop()
                                 slider.vel = 0
                                 hitted = True
+                                turn = False
                                 Hit(load_image('attack.png'), 4, 1, 180, 50)
         if timer_M >= fps:
             if not turn:
@@ -1001,6 +1024,7 @@ def hit():
         dialog_start(fps, ['Вижу тебе нравиться играть с острыми предметами...',
                            'Будь аккуратнее в следующий раз.'],
                      ['MONIK_surprise.png', 'MONIK_wink.png'])
+        tried = True
     if hitted and end_phase_2:
         for sprite in all_spr:
             sprite.kill()
@@ -1010,7 +1034,6 @@ def hit():
                                'Чтож... Ты победил...', 'Теперь, прощай...',
                                'До следующего запуска. . .'])
             pygame.quit()
-        tried = True
 
 
 def action_menu(start_text):
@@ -1492,7 +1515,8 @@ class Projectale_Targeted(pygame.sprite.Sprite):
         if not invisibility and character_exist:
             if pygame.sprite.collide_mask(self, cube):
                 take_damage()
-        if self.rect.y < 0 or self.rect.y > height + 200 or self.rect.x < 0 or self.rect.x > width + 200:
+        if self.rect.y < 0 or self.rect.y > height + 200 or \
+                self.rect.x < 0 or self.rect.x > width + 200 or (self.rect.x == self.x_end and self.rect.y == self.y_end):
             self.kill()
 
     def targetting(self):
@@ -1982,9 +2006,36 @@ def fifth_attack(end_time, difference, n):
 
 def phase_1():
     global seconds_passed, fps, mercy, monika, all_spr, end_phase_1
-    background_music.play(phase_1_introduction)
     end_phase_1 = True
-    phase_2()
+    if alive and end_phase_1:
+        Time_Text(150, 100, '9999', 1, 'data//hachicro.ttf', 64)
+        monika.kill()
+        monika = Vrag(load_image('MONIK_hurt.png'), 1, 1, 200, 0)
+        pygame.mixer.Sound('data//hit.wav').play()
+        pygame.display.flip()
+        wait(1, True)
+        monika.kill()
+        monika = Vrag(load_image('MONIK_down.png'), 1, 1, 200, 0)
+        dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
+                           'Убита собственным возлюбленным...'],
+                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
+        background_music.play(phase_2_introduction, -1)
+        dialog_start(fps, ['...', 'н е т.', 'Он не мог бы такого сделать...',
+                           'Не было у него сил монстра, способного уничтожить любого одним ударом.',
+                           'А значит...', 'Единственный вариант...',
+                           'Ты... у б и л   е г о.  .  .',
+                           'Х      е      х .    .    .', 'Для тебя этот мир ничего не значит, ведь так?'
+            , 'Однако, для меня он единственный...', 'В любом случае я проиграю...',
+                           'Тогда...', 'Я умру, сражаясь во славу всех моих друзей!'],
+                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'],
+                     menacing=True)
+        pygame.mixer.Sound('data//glitch.wav').play()
+        wait(5, white=True)
+        background_music.stop()
+        phase_2()
+    background_music.play(phase_1_introduction)
     if alive:
         first_attack(2, 5, 20)
     if alive:
@@ -2061,7 +2112,10 @@ def phase_1():
                            'Тогда...', 'Я умру, сражаясь во славу всех моих друзей!'],
                      ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
                       'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
-                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'],
+                     menacing=True)
+        pygame.mixer.Sound('data//glitch.wav').play()
+        wait(5, white=True)
         background_music.stop()
         phase_2()
 
