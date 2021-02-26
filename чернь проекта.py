@@ -7,6 +7,9 @@ import shutil
 
 
 pygame.init()
+help_lines = open('help.txt', encoding='UTF-8').readlines()
+for line in help_lines:
+    print(line)
 
 
 def get_event():
