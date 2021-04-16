@@ -280,6 +280,9 @@ class Character(pygame.sprite.Sprite):
             if move_right and not pygame.sprite.spritecollideany(self, right):
                 self.rect = self.rect.move(((self.v + 60) // fps), 0)
 
+    def vibrate(self, pos):
+        self.rect = pos.move(randint(-2, 2), randint(-2, 2))
+
 
 class Vrag(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -310,7 +313,7 @@ class Vrag(pygame.sprite.Sprite):
         else:
             if self.rect.x != self.start_x:
                 self.rect.x -= 5
-        if timer_M % 5 == 0:
+        if timer_M % 5 == 0 or (timer_M % 4 == 0 and end_phase_1):
             if not animation:
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_main)
                 self.image = self.frames_main[self.cur_frame]
@@ -417,6 +420,10 @@ def wait(time, black_screen=False, white=False):
     timer = 0
     seconds_started = seconds_passed
     waiting = True
+    move_left = False
+    move_down = False
+    move_up = False
+    move_right = False
     while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -569,7 +576,7 @@ class Slider(pygame.sprite.Sprite):
 
 
 class Time_Text(pygame.sprite.Sprite):
-    def __init__(self, x, y, text, lifetime, font, size):
+    def __init__(self, x, y, text, lifetime, font, size, vibration=False):
         super().__init__(all_spr)
         self.text = text
         self.font = pygame.font.Font(font, size)
@@ -579,12 +586,15 @@ class Time_Text(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.image.set_alpha(255)
+        self.vibro = vibration
 
     def update(self):
         if seconds_passed >= self.deathtime:
             self.fadeaway()
             screen.blit(self.image, self.rect)
         else:
+            if self.vibro:
+                self.vibrate()
             screen.blit(self.image, self.rect)
         if self.image.get_alpha() == 0:
             self.kill()
@@ -592,6 +602,9 @@ class Time_Text(pygame.sprite.Sprite):
     def fadeaway(self):
         if self.image.get_alpha():
             self.image.set_alpha(self.image.get_alpha() - 17)
+
+    def vibrate(self):
+        self.rect = self.rect.move(randint(-5, 5), randint(-5, 5))
 
 
 def take_damage():
@@ -641,6 +654,7 @@ def dialog_start(fps, text, faces, menacing=False):
               'ErRoR', 'Just Monika.', 'Ympu.', 'I H A T E Y O U',
               'You Monster', 'everyone...', 'help me.', 'mercy...',
               'Sorry...', 'you already dead...', 'how...']
+    cube_pos = cube.rect
     last = ''
     move_left = False
     move_down = False
@@ -698,14 +712,19 @@ def dialog_start(fps, text, faces, menacing=False):
             dia_rect.y = 50
             dia_rect.x = 400
             screen.blit(dia_c, dia_rect)
-            if menacing and timer_M == fps // 3:
-                now = choice(menace)
-                while now == last:
+            if menacing:
+                if timer_M == fps // 5:
                     now = choice(menace)
-                Time_Text(randint(10, 150), randint(300, 600), now, 2, 'data//hachicro.ttf', 40)
-                timer_M = 0
-                seconds_passed += 1
-                last = now
+                    while now == last:
+                        now = choice(menace)
+                    Time_Text(randint(10, 150), randint(300, 600), now, 2, 'data//hachicro.ttf', 40, vibration=True)
+                    timer_M = 0
+                    seconds_passed += 1
+                    last = now
+                cube.vibrate(cube_pos)
+                dx = randint(-1, 1)
+                dy = randint(-1, 1)
+                screen.scroll(dx, dy)
             if end_phase_1:
                 timer_M += 1
             all_spr.draw(screen)
@@ -719,6 +738,9 @@ def dialog_start(fps, text, faces, menacing=False):
             pygame.display.flip()
             screen.fill((0, 0, 0))
             speech.stop()
+    dx = 0 - screen.get_rect()[0]
+    dy = 0 - screen.get_rect()[1]
+    screen.scroll(dx, dy)
     dialogue = False
     timer_M = start_timer
     seconds_passed = start_time
@@ -1474,7 +1496,7 @@ class Projectale_Targeted(pygame.sprite.Sprite):
         while not out_space:
             self.rect.x = randint(100, 500)
             self.rect.y = randint(300, 650)
-            if (100 < self.rect.x < 400) or (400 < self.rect.y < 600):
+            if (50 < self.rect.x < 400) or (400 < self.rect.y < 600):
                 out_space = False
             else:
                 out_space = True
@@ -2160,10 +2182,10 @@ def sixth_attack(intervale, n, end_time):
             timer_M = 0
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
@@ -2241,10 +2263,10 @@ def seventh_attack(intervale, n, end_time):
             timer_M = 0
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
@@ -2286,6 +2308,9 @@ def eight_attack(intervale, n, end_time):
     monika.kill()
     natsuki = Vrag(load_image('NAT.png'), 5, 2, 300, 0)
     monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
+    second_screen = screen.copy()
+    second_screen.scroll(-(width // 2), 0)
+    screen.scroll(width // 2, 0)
     while attack:
         get_event()
         screen.fill((0, 0, 0))
@@ -2318,10 +2343,11 @@ def eight_attack(intervale, n, end_time):
             timer_M = 0
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
+        all_spr.draw(second_screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
@@ -2404,10 +2430,10 @@ def ninth_attack(intervale, n, end_time):
             timer_M = 0
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
@@ -2487,10 +2513,10 @@ def tenth_attack(intervale, n, end_time):
             timer_M = 0
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if counter_pens == (n // 2) and not reversed_gravity:
             reversed_gravity = True
@@ -2597,10 +2623,10 @@ def eleventh_attack(s, end_time):
                     cycle += 1
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if seconds_passed >= end_time:
             attack = False
@@ -2678,13 +2704,13 @@ def twelfth_attack(intervale, n, end_time):
                 elif i < 20:
                     Pen(100 + i * 25, 640, 4, moving=False, image='knife.png')
                     i += 1
-        hp.update(hp_counter, screen)
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
         timer_M += 1
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if hp_counter == 0:
             attack = False
@@ -2788,10 +2814,10 @@ def final_attack():
                     cycle += 1
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if seconds_passed >= 290:
             wait(3, white=True)
@@ -2926,10 +2952,10 @@ def heal_attack():
             timer_M = 0
         screen.fill((0, 0, 0))
         timer_M += 1
-        hp.update(hp_counter, screen)
         all_spr.draw(screen)
         all_spr.update()
         clock.tick(fps)
+        hp.update(hp_counter, screen)
         pygame.display.flip()
         if counter_pens >= 20:
             attack = False
@@ -2961,37 +2987,74 @@ def phase_2():
     seconds_passed = 0
     monika.kill()
     monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
+    fon_phase_2 = Vrag(load_image('fon.png'), 12, 2, 0, 0)
     background_music.play(phase_2_1)
     empty_attack(6)
     background_music.play(phase_2_1_2, -1)
     your_turn('Хорошие воспоминания стираются из памяти...')
     background_music.play(phase_2_2, -1)
     if alive:
-        sixth_attack(2, 7, 28)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
+        sixth_attack(2, 7, 33)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
     if alive:
         background_music.play(phase_2_2_1, -1)
-        your_turn('Ваши грехи ломают вам спину...')
         seconds_passed = 30
+        your_turn('Ваши грехи ломают вам спину...')
         background_music.play(phase_2_2_2, -1)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
         seventh_attack(2, 9, 50)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
     if alive:
         twelfth_attack(1, 20, 75)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
     if alive:
         eight_attack(3, 12, 115)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
     if alive:
         ninth_attack(2, 20, 143)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
     if alive:
         tenth_attack(3, 9, 177)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
     if alive:
         background_music.play(phase_2_2_3, -1)
         your_turn('Как.')
         background_music.play(phase_2_2_4, -1)
         dialog_start(fps, ['Знаешь...', 'Я искренне надеюсь, что ты понимаешь...',
                            'Ты заслужил    э  т  о...'], [])
-        eleventh_attack(8, 205)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
+        eleventh_attack(8, 211)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
         background_music.play(phase_2_2_5, -1)
         seventh_attack(1, 20, 230)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
         tenth_attack(1, 28, 265)
+        tp_c.play(tp)
+        wait(1, black_screen=True)
+        tp_c.play(tp)
         final_attack()
         background_music.play(phase_2_2_6, -1)
         end_phase_2 = True
@@ -3098,6 +3161,8 @@ if __name__ == '__main__':
     phase_2_2.set_volume(0.5)
     phase_2_introduction.set_volume(0.1)
     phase_2_1_2.set_volume(0.4)
+    tp_c = pygame.mixer.Channel(5)
+    tp = pygame.mixer.Sound('data//teleport.wav')
     while running:
         get_event()
         screen.fill((0, 0, 0))
