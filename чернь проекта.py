@@ -374,7 +374,7 @@ class Button():
         self.text = text
         self.start_x = start_x
         self.start_y = start_y
-        self.font = pygame.font.Font('data//font.ttf', 30)
+        self.font = pygame.font.Font('data//font.ttf', 21)
         self.screen = screen
 
     def on_it(self, pos):
@@ -576,20 +576,24 @@ class Slider(pygame.sprite.Sprite):
 
 
 class Time_Text(pygame.sprite.Sprite):
-    def __init__(self, x, y, text, lifetime, font, size, vibration=False):
+    def __init__(self, x, y, text, lifetime, font, size, vibration=False, start_alpha=255):
         super().__init__(all_spr)
         self.text = text
         self.font = pygame.font.Font(font, size)
-        self.deathtime = seconds_passed + lifetime
+        if lifetime != -1:
+            self.deathtime = seconds_passed + lifetime
+        else:
+            self.deathtime = -1
         self.image = self.font.render(self.text, True, (255, 255, 255))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.image.set_alpha(255)
+        self.image.set_alpha(start_alpha)
         self.vibro = vibration
+        print(self.text, self.rect.x, self.rect.y)
 
     def update(self):
-        if seconds_passed >= self.deathtime:
+        if (self.deathtime != -1 and seconds_passed >= self.deathtime) or seconds_passed == 11998877:
             self.fadeaway()
             screen.blit(self.image, self.rect)
         else:
@@ -654,7 +658,8 @@ def dialog_start(fps, text, faces, menacing=False):
               'ErRoR', 'Just Monika.', 'Ympu.', 'I H A T E Y O U',
               'You Monster', 'everyone...', 'help me.', 'mercy...',
               'Sorry...', 'you already dead...', 'how...']
-    cube_pos = cube.rect
+    if menacing:
+        cube_pos = cube.rect
     last = ''
     move_left = False
     move_down = False
@@ -713,7 +718,7 @@ def dialog_start(fps, text, faces, menacing=False):
             dia_rect.x = 400
             screen.blit(dia_c, dia_rect)
             if menacing:
-                if timer_M == fps // 5:
+                if timer_M >= fps // 5:
                     now = choice(menace)
                     while now == last:
                         now = choice(menace)
@@ -1046,7 +1051,6 @@ def hit():
     dodge = False
     if end_phase_1 and hitted:
         Time_Text(300, 100, 'ErrOr', 1, 'data//hachicro.ttf', 52)
-        pygame.mixer.Sound('data//hit.wav').play()
     if not tried and hitted and not end_phase_1:
         dialog_start(fps, ['Вижу тебе нравиться играть с острыми предметами...',
                            'Будь аккуратнее в следующий раз.'],
@@ -1494,9 +1498,9 @@ class Projectale_Targeted(pygame.sprite.Sprite):
         if x or y:
             out_space = True
         while not out_space:
-            self.rect.x = randint(100, 500)
+            self.rect.x = randint(10, 500)
             self.rect.y = randint(300, 650)
-            if (50 < self.rect.x < 400) or (400 < self.rect.y < 600):
+            if (100 < self.rect.x < 400) or (400 < self.rect.y < 600):
                 out_space = False
             else:
                 out_space = True
@@ -2089,7 +2093,8 @@ def phase_1():
         while mercy:
             your_turn('Моника щадит вас...')
     if alive and end_phase_1:
-        Time_Text(150, 100, '9999', 1, 'data//hachicro.ttf', 64)
+        seconds_passed = 0
+        Time_Text(150, 100, str(randint(1012, 12000)), 1, 'data//hachicro.ttf', 64)
         monika.kill()
         monika = Vrag(load_image('MONIK_hurt.png'), 1, 1, 200, 0)
         pygame.mixer.Sound('data//hit.wav').play()
@@ -2105,8 +2110,8 @@ def phase_1():
                            'Не было у него сил монстра, способного уничтожить любого одним ударом.',
                            'А значит...', 'Единственный вариант...',
                            'Ты... у б и л   е г о.  .  .',
-                           'Х      е      х .    .    .', 'Для тебя этот мир ничего не значит, ведь так?'
-            , 'Однако, для меня он единственный...', 'В любом случае я проиграю...',
+                           'Х      е      х .    .    .', 'Для тебя этот мир ничего не значит, ведь так?',
+                           'Однако, для меня он единственный...', 'В любом случае я проиграю...',
                            'Тогда...', 'Я умру, сражаясь во славу всех моих друзей!'],
                      ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
                       'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
@@ -2114,6 +2119,7 @@ def phase_1():
                      menacing=True)
         pygame.mixer.Sound('data//glitch.wav').play()
         wait(5, white=True)
+        seconds_passed = 99999999
         for _ in range(200):
             all_spr.update()
         background_music.stop()
@@ -2223,6 +2229,8 @@ def seventh_attack(intervale, n, end_time):
     left_board = Board(100, 400, 100, 700, left)
     right_board = Board(600, 400, 600, 706, right)
     counter_pens = 0
+    cube.rect.x = 300
+    cube.rect.y = 500
     monika.kill()
     yuri = Vrag(load_image('YRR.png'), 5, 2, 100, 0)
     monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
@@ -2302,6 +2310,8 @@ def eight_attack(intervale, n, end_time):
     Platform((110, 605))
     blue = True
     counter_pens = 0
+    cube.rect.x = 300
+    cube.rect.y = 500
     for i in range(33):
         Pen(100 + i * 15, 404, 3, False)
         Pen(100 + i * 15, 620, 4, False)
@@ -2389,6 +2399,8 @@ def ninth_attack(intervale, n, end_time):
     Platform((200, 525), False)
     Platform((300, 490), False)
     Platform((500, 490), False)
+    cube.rect.x = 300
+    cube.rect.y = 500
     blue = True
     reversed_gravity = True
     pygame.mixer.Sound('data//change_gravity.wav').play()
@@ -2473,6 +2485,7 @@ def tenth_attack(intervale, n, end_time):
     down_board = Board(100, 700, 600, 700, down)
     left_board = Board(100, 500, 100, 700, left)
     right_board = Board(600, 500, 600, 706, right)
+
     blue = True
     counter_pens = 0
     Pen(110, 620, 4, reflectable=True, velocity=-170)
@@ -2652,9 +2665,12 @@ def twelfth_attack(intervale, n, end_time):
         timer, alive, energy_reversed, gravity_force_up, monika
     pygame.init()
     counter_pens = 0
-    Platform((450, 625))
-    Platform((300, 550))
-    Platform((220, 475))
+    Platform((randint(200, 500), 625))
+    Platform((randint(200, 500), 550))
+    Platform((randint(200, 500), 475))
+    Platform((randint(200, 500), 625))
+    Platform((randint(200, 500), 550))
+    Platform((randint(200, 500), 475))
     attack = True
     blue = True
     time_started = seconds_passed
@@ -2731,7 +2747,8 @@ def final_attack():
         move_down, energy, blue, invisibility, invisibility_timer, \
         timer, alive, up_board, left_board, down_board, \
         right_board, border, up, down, left, right, \
-        monika, gravity_force, reversed_gravity, gravity_force_up, energy_reversed
+        monika, gravity_force, reversed_gravity, \
+        gravity_force_up, energy_reversed, debug
     pygame.init()
     attack = True
     all_spr.remove(up_board)
@@ -2774,6 +2791,8 @@ def final_attack():
     while attack:
         get_event()
         screen.fill((0, 0, 0))
+        if hp_counter == 1 and seconds_passed >= 275:
+            debug = True
         if invisibility:
             invisibility_timer += 1
         if invisibility_timer == fps * 3:
@@ -2835,6 +2854,10 @@ def final_attack():
     sayori.kill()
     yuri.kill()
     natsuki.kill()
+    fon_phase_2.kill()
+    seconds_passed = 11998877
+    for _ in range(200):
+        all_spr.update()
     print(seconds_passed)
 
 
@@ -2977,7 +3000,17 @@ def heal_attack():
 
 def phase_2():
     global seconds_passed, fps, mercy, monika, all_spr, actions, \
-        KR, damage, actions, inventory, tried, end_phase_2
+        KR, damage, actions, inventory, tried, end_phase_2, debug, fon_phase_2
+    menace = ['r u n.', 'Save yourself.', 'Power.',
+              'Unlimited.', 'CmepTb',
+              'Say Goodbye', 'Cheater.', 'DETERMINATION.', '736d532',
+              'O W U B K A.', 'YoU...', 'M̶̲̋O̷͕͑N̶͉̓I̷̞͑K̶̪̃A̷̜̎',
+              'ErRoR', 'Just Monika.', 'Ympu.', 'I H A T E Y O U',
+              'You Monster', 'everyone...', 'help me.', 'mercy...',
+              'Sorry...', 'you already dead...', 'how...']
+    for _ in range(20):
+        Time_Text(randint(10, 150), randint(300, 600), choice(menace), -1,
+                  'data//hachicro.ttf', 40, vibration=True, start_alpha=20)
     tried = True
     damage = 1
     KR = True
@@ -3009,7 +3042,7 @@ def phase_2():
         tp_c.play(tp)
         wait(1, black_screen=True)
         tp_c.play(tp)
-        seventh_attack(2, 9, 50)
+        seventh_attack(2, 8, 50)
         tp_c.play(tp)
         wait(1, black_screen=True)
         tp_c.play(tp)
@@ -3034,6 +3067,7 @@ def phase_2():
         wait(1, black_screen=True)
         tp_c.play(tp)
     if alive:
+        seconds_passed = 180
         background_music.play(phase_2_2_3, -1)
         your_turn('Как.')
         background_music.play(phase_2_2_4, -1)
@@ -3047,7 +3081,7 @@ def phase_2():
         wait(1, black_screen=True)
         tp_c.play(tp)
         background_music.play(phase_2_2_5, -1)
-        seventh_attack(1, 20, 230)
+        seventh_attack(1, 19, 230)
         tp_c.play(tp)
         wait(1, black_screen=True)
         tp_c.play(tp)
@@ -3111,6 +3145,7 @@ if __name__ == '__main__':
     eaten_counter = 0
     hp_counter = 100
     damage = 10
+    fon_phase_2 = None
     energy = False
     seconds_passed = 0
     started = False

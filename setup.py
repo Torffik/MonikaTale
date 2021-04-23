@@ -10,7 +10,7 @@ includes = ['pygame', 'sys', 'os', 'random', 'math']
 
 zip_include_packages = ['pygame', 'sys', 'os', 'random', 'math']
 
-include_files = ['data']
+include_files = ['data', 'help.txt']
 
 options = {
 'build_exe': {
