@@ -334,7 +334,6 @@ class Vrag(pygame.sprite.Sprite):
 
 class Hit(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
-
         super().__init__(all_spr)
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
@@ -623,9 +622,26 @@ def take_damage():
 
 
 def death():
+    global all_spr, timer_M
+    timer_M = 0
+    for sprite in all_spr:
+        sprite.kill()
     death_screen = pygame.display.set_mode((700, 800))
     pygame.display.set_caption('МоникаТале')
     death_screen.fill((0, 0, 0))
+    animation = Hit(load_image('death1.png'), 5, 5, 275, 500)
+    while animation in all_spr:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                animation.kill()
+                pygame.quit()
+                sys.exit()
+        screen.fill((0, 0, 0))
+        all_spr.draw(screen)
+        all_spr.update()
+        timer_M += 2
+        clock.tick(fps)
+        pygame.display.flip()
     font = pygame.font.Font('data//font.ttf', 70)
     line = pygame.font.Font('data//font.ttf', 24)
     line2 = line.render('Нажмите SPACE, чтобы выйти в главное меню', True, pygame.Color('white'))
@@ -641,10 +657,11 @@ def death():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
+                pygame.quit()
+                sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    return (start_screen(30, (700, 800)))
+                    return start_screen(30, (700, 800))
         pygame.display.flip()
 
 
