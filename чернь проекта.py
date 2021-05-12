@@ -129,13 +129,19 @@ class Board(pygame.sprite.Sprite):
 
 class Character(pygame.sprite.Sprite):
     def __init__(self, pos):
-        self.red = load_image('heart.png')
+        if not end_phase_1:
+            self.red = load_image('heart.png')
+        else:
+            self.red = load_image('heart2.png')
         super().__init__(all_spr)
         self.add(characters)
         self.rect = pygame.Rect(pos[0], pos[1], 30, 30)
         self.v = 80
         self.g = 0
-        self.blue = load_image('heart_2.png')
+        if not end_phase_1:
+            self.blue = load_image('heart_2.png')
+        else:
+            self.blue = load_image('heart2_2.png')
         self.image = self.red
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -333,13 +339,16 @@ class Vrag(pygame.sprite.Sprite):
 
 
 class Hit(pygame.sprite.Sprite):
-    def __init__(self, sheet, columns, rows, x, y):
+    def __init__(self, sheet, columns, rows, x, y, speed=10, alpha=255):
         super().__init__(all_spr)
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.rect.move(x, y)
+        self.speed = speed
+        self.a = alpha
+        self.image.set_alpha(self.a)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -351,11 +360,12 @@ class Hit(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        if timer_M % 10 == 0:
+        if timer_M % self.speed == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
             if self.cur_frame == len(self.frames) - 1:
                 self.kill()
+        self.image.set_alpha(self.a)
 
 
 class Minigame(pygame.sprite.Sprite):
@@ -629,7 +639,12 @@ def death():
     death_screen = pygame.display.set_mode((700, 800))
     pygame.display.set_caption('МоникаТале')
     death_screen.fill((0, 0, 0))
-    animation = Hit(load_image('death1.png'), 5, 5, 275, 500)
+    if end_phase_1:
+        name = 'death.png'
+    else:
+        name = 'death1.png'
+    pygame.mixer.Sound('data//break.wav').play()
+    animation = Hit(load_image(name), 5, 6, 275, 500)
     while animation in all_spr:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -766,6 +781,37 @@ def dialog_start(fps, text, faces, menacing=False):
     dialogue = False
     timer_M = start_timer
     seconds_passed = start_time
+
+
+def animate(sprites):
+    global screen, move_left, move_right, move_up, move_down, timer_M, seconds_passed
+    move_left = False
+    move_down = False
+    move_up = False
+    move_right = False
+    start_timer = timer_M
+    an_spr = pygame.sprite.Group()
+    for sprite in sprites:
+        sprite.add(an_spr)
+    animating = True
+    while animating:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        screen.fill((0, 0, 0))
+        timer_M += 1
+        an_spr.draw(screen)
+        an_spr.update()
+        clock.tick(fps)
+        empty = True
+        for sprite in sprites:
+            if an_spr.has(sprite):
+                empty = False
+        if empty:
+            animating = False
+        pygame.display.flip()
+    timer_M = start_timer
 
 
 def monologue_start(fps, text):
@@ -2113,7 +2159,6 @@ def phase_1():
         seconds_passed = 0
         Time_Text(150, 100, str(randint(1012, 12000)), 1, 'data//hachicro.ttf', 64)
         monika.kill()
-        monika = Vrag(load_image('MONIK_hurt.png'), 1, 1, 200, 0)
         pygame.mixer.Sound('data//hit.wav').play()
         pygame.display.flip()
         wait(1, True)
@@ -2122,6 +2167,12 @@ def phase_1():
         dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
                            'Убита собственным возлюбленным...'],
                      ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
+        monika.kill()
+        animate([Hit(load_image('MONIK_death.png'), 10, 5, 200, 0, speed=3),
+                 Hit(load_image('NAT.png'), 5, 2, 400, 0, alpha=50),
+                 Hit(load_image('YRR.png'), 5, 2, 100, 0, alpha=50),
+                 Hit(load_image('SAY.png'), 5, 2, 300, 0, alpha=50)])
+        monika = Vrag(load_image('MONIK_down2.png'), 3, 2, 200, 0)
         background_music.play(phase_2_introduction, -1)
         dialog_start(fps, ['...', 'н е т.', 'Он не мог бы такого сделать...',
                            'Не было у него сил монстра, способного уничтожить любого одним ударом.',
@@ -2212,7 +2263,7 @@ def sixth_attack(intervale, n, end_time):
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     blue = False
@@ -2295,7 +2346,7 @@ def seventh_attack(intervale, n, end_time):
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     yuri.kill()
@@ -2378,7 +2429,7 @@ def eight_attack(intervale, n, end_time):
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     blue = False
@@ -2466,7 +2517,7 @@ def ninth_attack(intervale, n, end_time):
         pygame.display.flip()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     blue = False
@@ -2554,7 +2605,7 @@ def tenth_attack(intervale, n, end_time):
             pygame.mixer.Sound('data//change_gravity.wav').play()
         if counter_pens >= n and seconds_passed >= end_time:
             attack = False
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     blue = False
@@ -2660,7 +2711,7 @@ def eleventh_attack(s, end_time):
         pygame.display.flip()
         if seconds_passed >= end_time:
             attack = False
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     blue = False
@@ -2722,12 +2773,7 @@ def twelfth_attack(intervale, n, end_time):
                 Projectale_Targeted('pen.png', cube)
                 Projectale_Targeted('pen.png', cube)
                 Projectale_Targeted('pen.png', cube)
-                Projectale_Targeted('pen.png', cube)
-                Projectale_Targeted('pen.png', cube)
-                Projectale_Targeted('pen.png', cube)
                 counter_pens += 1
-            if seconds_passed - time_started == 1:
-                gravity_force_up = True
             seconds_passed += 1
             timer_M = 0
         if seconds_passed - time_started >= 3:
@@ -2745,7 +2791,7 @@ def twelfth_attack(intervale, n, end_time):
         clock.tick(fps)
         hp.update(hp_counter, screen)
         pygame.display.flip()
-        if hp_counter == 0:
+        if hp_counter <= 0:
             attack = False
             alive = False
     print(seconds_passed)
@@ -2911,6 +2957,8 @@ def empty_attack(end_time):
             seconds_passed += 1
             timer_M = 0
         screen.fill((0, 0, 0))
+        if seconds_passed == 1 or seconds_passed == 4:
+            pygame.mixer.Sound('data//break.wav').play()
         timer_M += 1
         hp.update(hp_counter, screen)
         all_spr.draw(screen)
@@ -3017,7 +3065,7 @@ def heal_attack():
 
 def phase_2():
     global seconds_passed, fps, mercy, monika, all_spr, actions, \
-        KR, damage, actions, inventory, tried, end_phase_2, debug, fon_phase_2
+        KR, damage, actions, inventory, tried, end_phase_2, debug, fon_phase_2, cube
     menace = ['r u n.', 'Save yourself.', 'Power.',
               'Unlimited.', 'CmepTb',
               'Say Goodbye', 'Cheater.', 'DETERMINATION.', '736d532',
@@ -3036,11 +3084,14 @@ def phase_2():
         inventory.append('Шок. Кекс')
     seconds_passed = 0
     monika.kill()
+    cube.kill()
     monika = Vrag(load_image('MONIKA.png'), 5, 12, 200, 0)
     fon_phase_2 = Vrag(load_image('fon.png'), 12, 2, 0, 0)
     background_music.play(phase_2_1)
+    Hit(load_image('broke.png'), 6, 6, 300, 450, speed=5)
     empty_attack(6)
     background_music.play(phase_2_1_2, -1)
+    cube = Character((400, 400))
     your_turn('Хорошие воспоминания стираются из памяти...')
     background_music.play(phase_2_2, -1)
     if alive:
