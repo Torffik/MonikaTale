@@ -3,7 +3,6 @@ import os
 import sys
 from random import randint, choice
 import math
-import shutil
 
 
 pygame.init()
@@ -554,7 +553,7 @@ class Health_bar():
         pygame.init()
         fort = pygame.font.Font('data//font.ttf', 32)
         if KR:
-            hp_c = fort.render(f'{hp}/100   KR', True, (255, 255, 255))
+            hp_c = fort.render(f'{hp}/100   CR', True, (255, 255, 255))
         else:
             hp_c = fort.render(f'{hp}/100', True, (255, 255, 255))
         hp_rect = hp_c.get_rect()
@@ -2100,6 +2099,44 @@ def fifth_attack(end_time, difference, n):
 
 def phase_1():
     global seconds_passed, fps, mercy, monika, all_spr, end_phase_1
+    if debug:
+        end_phase_1 = True
+        seconds_passed = 0
+        Time_Text(150, 100, str(randint(1012, 12000)), 1, 'data//hachicro.ttf', 64)
+        monika.kill()
+        pygame.mixer.Sound('data//hit.wav').play()
+        pygame.display.flip()
+        wait(1, True)
+        monika.kill()
+        monika = Vrag(load_image('MONIK_down.png'), 1, 1, 200, 0)
+        dialog_start(fps, ['...', 'Хех...', 'Какая ирония...',
+                           'Убита собственным возлюбленным...'],
+                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'])
+        monika.kill()
+        animate([Hit(load_image('MONIK_death.png'), 10, 5, 200, 0, speed=3),
+                 Hit(load_image('NAT.png'), 5, 2, 400, 0, alpha=50),
+                 Hit(load_image('YRR.png'), 5, 2, 100, 0, alpha=50),
+                 Hit(load_image('SAY.png'), 5, 2, 300, 0, alpha=50)])
+        monika = Vrag(load_image('MONIK_down2.png'), 3, 2, 200, 0)
+        background_music.play(phase_2_introduction, -1)
+        dialog_start(fps, ['...', 'н е т.', 'Он не мог бы такого сделать...',
+                           'Не было у него сил монстра, способного уничтожить любого одним ударом.',
+                           'А значит...', 'Единственный вариант...',
+                           'Ты... у б и л   е г о.  .  .',
+                           'Х      е      х .    .    .', 'Для тебя этот мир ничего не значит, ведь так?',
+                           'Однако, для меня он единственный...', 'В любом случае я проиграю...',
+                           'Тогда...', 'Я умру, сражаясь во славу всех моих друзей!'],
+                     ['MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png',
+                      'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png', 'MONIK_down.png'],
+                     menacing=True)
+        pygame.mixer.Sound('data//glitch.wav').play()
+        wait(5, white=True)
+        seconds_passed = 99999999
+        for _ in range(200):
+            all_spr.update()
+        background_music.stop()
+        phase_2()
     background_music.play(phase_1_introduction)
     if alive:
         first_attack(2, 5, 20)
@@ -3065,7 +3102,8 @@ def heal_attack():
 
 def phase_2():
     global seconds_passed, fps, mercy, monika, all_spr, actions, \
-        KR, damage, actions, inventory, tried, end_phase_2, debug, fon_phase_2, cube
+        KR, damage, actions, inventory, tried, end_phase_2, \
+        debug, fon_phase_2, cube, gravity_force_up
     menace = ['r u n.', 'Save yourself.', 'Power.',
               'Unlimited.', 'CmepTb',
               'Say Goodbye', 'Cheater.', 'DETERMINATION.', '736d532',
@@ -3093,6 +3131,7 @@ def phase_2():
     background_music.play(phase_2_1_2, -1)
     cube = Character((400, 400))
     your_turn('Хорошие воспоминания стираются из памяти...')
+    gravity_force_up = False
     background_music.play(phase_2_2, -1)
     if alive:
         tp_c.play(tp)
@@ -3371,6 +3410,8 @@ if __name__ == '__main__':
             eaten_counter = 0
             hp_counter = 100
             damage = 10
+            timer = 0
+            timer_M = 0
             energy = False
             seconds_passed = 0
             started = False
